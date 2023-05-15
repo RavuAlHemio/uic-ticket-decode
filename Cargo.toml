@@ -1,0 +1,9 @@
+[package]
+name = "uic-ticket-decode"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nom = { version = "7.1" }
+num-bigint = { version = "0.4" }
+once_cell = { version = "1.17" }
