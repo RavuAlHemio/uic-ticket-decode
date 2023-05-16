@@ -2,6 +2,7 @@
 
 
 use std::borrow::Cow;
+use std::fmt;
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
@@ -42,11 +43,16 @@ impl Integer {
         }
     }
 
-    /// Creates an ASN.1 integer from the given slice of bits.
+    /// Creates an ASN.1 integer from the given usize value.
+    pub fn from_usize(value: usize) -> Self {
+        Self::from_long(BigInt::from(value))
+    }
+
+    /// Creates an unsigned ASN.1 integer from the given slice of bits.
     ///
     /// Bits are assumed to be ordered from most to least significant. Note that this can only
     /// create unsigned integers.
-    pub fn from_bits(bits: &[bool]) -> Self {
+    pub fn from_bits_unsigned(bits: &[bool]) -> Self {
         let one = Self::from_short(1);
         let mut value = Self::from_short(0);
         for &bit in bits {
@@ -58,10 +64,45 @@ impl Integer {
         value
     }
 
+    /// Creates a signed ASN.1 integer from the given slice of bits.
+    ///
+    /// Bits are assumed to be ordered from most to least significant. The first bit is assumed to
+    /// have the value `-2**n` instead of `2**n`, acting as a two's-complement sign bit.
+    pub fn from_bits_signed(bits: &[bool]) -> Self {
+        let one = Self::from_short(1);
+        let mut value = Self::from_short(0);
+        let mut first_bit = true;
+        for &bit in bits {
+            value <<= 1;
+            if bit {
+                if first_bit {
+                    value -= &one;
+                } else {
+                    value += &one;
+                }
+            }
+            first_bit = false;
+        }
+        value
+    }
+
     /// Returns the inner integer as a BigInt value.
     #[inline]
     pub fn to_bigint(&self) -> Cow<BigInt> {
         self.inner.to_bigint()
+    }
+
+    /// Attempts to convert the inner integer to a usize value.
+    pub fn try_to_usize(&self) -> Option<usize> {
+        self.inner.try_to_usize()
+    }
+}
+impl fmt::Display for Integer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.inner {
+            IntegerInner::Short(s) => write!(f, "{}", s),
+            IntegerInner::Long(l) => write!(f, "{}", l),
+        }
     }
 }
 
@@ -264,6 +305,13 @@ impl IntegerInner {
         match self {
             Self::Short(s) => Cow::Owned(BigInt::from(*s)),
             Self::Long(l) => Cow::Borrowed(l),
+        }
+    }
+
+    pub fn try_to_usize(&self) -> Option<usize> {
+        match self {
+            Self::Short(s) => usize::try_from(*s).ok(),
+            Self::Long(l) => usize::try_from(l).ok(),
         }
     }
 }
