@@ -134,8 +134,13 @@ fn main() {
 fn decode_record(record_id: &[u8], record_version: &[u8], record_data: &[u8]) {
     if record_id == b"U_FLEX" && record_version == b"03" {
         decode_record_uflex_3(record_data);
+    } else if record_id == b"U_HEAD" && record_version == b"01" {
+        decode_record_uhead_1(record_data);
+    } else if record_id == b"U_TLAY" && record_version == b"01" {
+        decode_record_utlay_1(record_data);
     } else {
-        println!("cannot decode this record type");
+        println!("  cannot decode this record type; hex dump:");
+        hexdump(record_data);
     }
 }
 
@@ -150,4 +155,96 @@ fn decode_record_uflex_3(record_data: &[u8]) {
         .expect("failed to decode UicRailTicketData");
 
     println!("{:#?}", uic_rail_ticket_data);
+}
+
+fn bytes_to_string(bs: &[u8]) -> String {
+    match std::str::from_utf8(bs) {
+        Ok(s) => format!("{:?}", s),
+        Err(_) => format!("{:?}", bs),
+    }
+}
+
+fn decode_record_uhead_1(record_data: &[u8]) {
+    // https://www.era.europa.eu/system/files/2022-11/era_technical_document_tap_b_7_v1.3.0.pdf § 8.3
+
+    let distributing_ru = bytes_to_string(&record_data[0..4]);
+    println!("  distributing RU: {}", distributing_ru);
+
+    let ticket_key = bytes_to_string(&record_data[4..24]);
+    println!("  ticket key: {}", ticket_key);
+
+    let time_of_issuance = bytes_to_string(&record_data[24..36]);
+    println!("  time of issuance: {}", time_of_issuance);
+
+    let flags = bytes_to_string(&record_data[36..37]);
+    println!("  flags: {}", flags);
+    if let Ok(s) = std::str::from_utf8(&record_data[36..37]) {
+        if let Ok(b) = s.parse::<u8>() {
+            if b == 0 {
+                println!("    no flags set");
+            } else {
+                if b & 0b001 != 0 {
+                    println!("    international ticket");
+                }
+                if b & 0b010 != 0 {
+                    println!("    edited by agent");
+                }
+                if b & 0b100 != 0 {
+                    println!("    specimen");
+                }
+            }
+        }
+    }
+
+    let language = bytes_to_string(&record_data[37..39]);
+    println!("  language: {}", language);
+
+    let second_language = bytes_to_string(&record_data[39..41]);
+    println!("  second language: {}", second_language);
+}
+
+fn decode_record_utlay_1(record_data: &[u8]) {
+    // https://www.era.europa.eu/system/files/2022-11/era_technical_document_tap_b_7_v1.3.0.pdf § 8.4
+
+    let layout_standard = bytes_to_string(&record_data[0..4]);
+    println!("  layout standard: {}", layout_standard);
+
+    let number_fields = bytes_to_string(&record_data[4..8]);
+    println!("  number of fields: {}", number_fields);
+    if let Ok(s) = std::str::from_utf8(&record_data[4..8]) {
+        if let Ok(n) = s.parse::<usize>() {
+            let mut index = 8;
+            for i in 0..n {
+                println!("  field {}:", i);
+
+                let field_line = bytes_to_string(&record_data[index+0..index+2]);
+                println!("    line: {}", field_line);
+
+                let field_column = bytes_to_string(&record_data[index+2..index+4]);
+                println!("    column: {}", field_column);
+
+                let field_height = bytes_to_string(&record_data[index+4..index+6]);
+                println!("    height: {}", field_height);
+
+                let field_width = bytes_to_string(&record_data[index+6..index+8]);
+                println!("    width: {}", field_width);
+
+                let field_formatting = bytes_to_string(&record_data[index+8..index+9]);
+                println!("    formatting: {}", field_formatting);
+
+                let field_text_length = bytes_to_usize(&record_data[index+9..index+13])
+                    .expect("failed to decode field text length");
+
+                let field_text = bytes_to_string(&record_data[index+13..index+13+field_text_length]);
+                println!("    text: {}", field_text);
+
+                index += 13 + field_text_length;
+            }
+        }
+    }
+}
+
+fn bytes_to_usize(slice: &[u8]) -> Option<usize> {
+    let s = std::str::from_utf8(slice).ok()?;
+    s.parse().ok()
 }
