@@ -223,7 +223,7 @@ fn value_with_length_is_fragmented(length: &Integer) -> bool {
 
 
 /// Decodes a length value.
-/// 
+///
 /// The encoding process is described in X.691 § 11.9.4.
 pub fn decode_length<'a>(bits: &'a [bool], constraint: &WholeNumberConstraint) -> ParseResult<'a, Integer> {
     if let WholeNumberConstraint::Constrained { min, max } = constraint {
