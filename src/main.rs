@@ -1,5 +1,6 @@
 mod asn1_uper;
 mod uflex_3;
+mod utlay_painter;
 
 
 use std::env;
@@ -213,6 +214,7 @@ fn decode_record_utlay_1(record_data: &[u8]) {
     println!("  number of fields: {}", number_fields);
     if let Ok(s) = std::str::from_utf8(&record_data[4..8]) {
         if let Ok(n) = s.parse::<usize>() {
+            let mut canvas = utlay_painter::Canvas::new();
             let mut index = 8;
             for i in 0..n {
                 println!("  field {}:", i);
@@ -238,8 +240,25 @@ fn decode_record_utlay_1(record_data: &[u8]) {
                 let field_text = bytes_to_string(&record_data[index+13..index+13+field_text_length]);
                 println!("    text: {}", field_text);
 
+                let orig_index = index;
                 index += 13 + field_text_length;
+
+                let Some(line_num) = bytes_to_usize(&record_data[orig_index+0..orig_index+2]) else { continue };
+                let Some(col_num) = bytes_to_usize(&record_data[orig_index+2..orig_index+4]) else { continue };
+                let Some(height_num) = bytes_to_usize(&record_data[orig_index+4..orig_index+6]) else { continue };
+                let Some(width_num) = bytes_to_usize(&record_data[orig_index+6..orig_index+8]) else { continue };
+                let Ok(text) = String::from_utf8(Vec::from(&record_data[orig_index+13..orig_index+13+field_text_length])) else { continue };
+                let record = utlay_painter::Record {
+                    line: line_num,
+                    column: col_num,
+                    width: width_num,
+                    height: height_num,
+                    text,
+                };
+                canvas.paint_record(&record);
             }
+            let canvas_in_a_box = utlay_painter::CanvasInABox(&canvas);
+            println!("{}", canvas_in_a_box);
         }
     }
 }
