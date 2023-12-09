@@ -3,13 +3,31 @@ mod uflex_3;
 mod utlay_painter;
 
 
-use std::env;
 use std::io::{Cursor, Read};
+use std::path::PathBuf;
 
+use clap::Parser;
 use flate2;
 use rxing;
 
 use crate::asn1_uper::to_bits_msb_first;
+
+
+#[derive(Parser)]
+enum ProgMode {
+    Barcode(BarcodeArgs),
+    Data(DataArgs),
+}
+
+#[derive(Parser)]
+struct BarcodeArgs {
+    pub barcode_path: String,
+}
+
+#[derive(Parser)]
+struct DataArgs {
+    pub data_path: PathBuf,
+}
 
 
 fn hexdump(bs: &[u8]) {
@@ -21,12 +39,21 @@ fn hexdump(bs: &[u8]) {
 
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let barcode = rxing::helpers::detect_in_file(&args[1], None)
-        .expect("failed to detect Aztec barcode");
-    let barcode_contents: Vec<u8> = barcode.getText().chars()
-        .map(|c| u8::try_from(u32::from(c)).expect("failed to decode character as byte"))
-        .collect();
+    let prog_mode = ProgMode::parse();
+    let barcode_contents = match prog_mode {
+        ProgMode::Barcode(barcode_args) => {
+            let barcode = rxing::helpers::detect_in_file(&barcode_args.barcode_path, None)
+                .expect("failed to detect Aztec barcode");
+            let barcode_contents: Vec<u8> = barcode.getText().chars()
+                .map(|c| u8::try_from(u32::from(c)).expect("failed to decode character as byte"))
+                .collect();
+            barcode_contents
+        },
+        ProgMode::Data(data_args) => {
+            std::fs::read(&data_args.data_path)
+                .expect("failed to read barcode data")
+        },
+    };
 
     print!("barcode contents:");
     hexdump(&barcode_contents);
