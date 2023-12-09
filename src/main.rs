@@ -1,5 +1,6 @@
 mod asn1_uper;
 mod uflex_3;
+mod uflex_3_ext;
 mod utlay_painter;
 
 
@@ -11,6 +12,7 @@ use flate2;
 use rxing;
 
 use crate::asn1_uper::to_bits_msb_first;
+use crate::uflex_3_ext::output_ticket_validity;
 
 
 #[derive(Parser)]
@@ -183,6 +185,9 @@ fn decode_record_uflex_3(record_data: &[u8]) {
         .expect("failed to decode UicRailTicketData");
 
     println!("{:#?}", uic_rail_ticket_data);
+
+    // output interpreted date/time info
+    output_ticket_validity(&uic_rail_ticket_data.issuing_detail, &uic_rail_ticket_data.transport_document);
 }
 
 fn bytes_to_string(bs: &[u8]) -> String {

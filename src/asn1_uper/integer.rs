@@ -3,12 +3,13 @@
 
 use std::borrow::Cow;
 use std::fmt;
+use std::num::TryFromIntError;
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, DivAssign,
     Mul, MulAssign, Neg, Rem, RemAssign, Shl, ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 
-use num_bigint::BigInt;
+use num_bigint::{BigInt, TryFromBigIntError};
 use once_cell::sync::Lazy;
 
 
@@ -288,6 +289,28 @@ impl Neg for Integer {
     }
 }
 
+/// An error that occurs when attempting to convert an ASN.1 integer into a built-in integer type.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum TryFromIntegerError {
+    Short(TryFromIntError),
+    Long(TryFromBigIntError<()>),
+}
+impl fmt::Display for TryFromIntegerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Short(e) => e.fmt(f),
+            Self::Long(e) => e.fmt(f),
+        }
+    }
+}
+impl std::error::Error for TryFromIntegerError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Short(e) => Some(e),
+            Self::Long(e) => Some(e),
+        }
+    }
+}
 
 
 /// The magic behind an ASN.1 integer.
@@ -317,4 +340,53 @@ impl IntegerInner {
 }
 impl Default for IntegerInner {
     fn default() -> Self { Self::Short(0) }
+}
+
+
+macro_rules! implement_conversion {
+    ($target:ident) => {
+        impl TryFrom<&IntegerInner> for $target {
+            type Error = TryFromIntegerError;
+            fn try_from(value: &IntegerInner) -> Result<Self, Self::Error> {
+                match value {
+                    IntegerInner::Short(i) => (*i).try_into().map_err(|e| Self::Error::Short(e)),
+                    IntegerInner::Long(i) => i.try_into().map_err(|e| Self::Error::Long(e)),
+                }
+            }
+        }
+
+        impl TryFrom<&Integer> for $target {
+            type Error = TryFromIntegerError;
+            fn try_from(value: &Integer) -> Result<Self, Self::Error> {
+                Self::try_from(&value.inner)
+            }
+        }
+    };
+}
+implement_conversion!(i8);
+implement_conversion!(u8);
+implement_conversion!(i16);
+implement_conversion!(u16);
+implement_conversion!(i32);
+implement_conversion!(u32);
+implement_conversion!(i64);
+implement_conversion!(u64);
+implement_conversion!(u128);
+implement_conversion!(isize);
+implement_conversion!(usize);
+
+impl TryFrom<&IntegerInner> for i128 {
+    type Error = TryFromIntegerError;
+    fn try_from(value: &IntegerInner) -> Result<Self, Self::Error> {
+        match value {
+            IntegerInner::Short(i) => Ok(*i),
+            IntegerInner::Long(i) => i.try_into().map_err(|e| Self::Error::Long(e)),
+        }
+    }
+}
+impl TryFrom<&Integer> for i128 {
+    type Error = TryFromIntegerError;
+    fn try_from(value: &Integer) -> Result<Self, Self::Error> {
+        Self::try_from(&value.inner)
+    }
 }
