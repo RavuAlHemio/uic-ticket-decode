@@ -271,7 +271,7 @@ implement_bin_op!(@checked_rhs, Shr, shr, checked_shr, u32);
 implement_bin_op!(@assign_checked_rhs, ShrAssign, shr_assign, Shr, shr, checked_shr, u32);
 implement_bin_op!(@checked, Sub, sub, checked_sub);
 implement_bin_op!(@assign_checked, SubAssign, sub_assign, Sub, sub, checked_sub);
-impl Neg for Integer {
+impl Neg for &Integer {
     type Output = Integer;
 
     fn neg(self) -> Self::Output {

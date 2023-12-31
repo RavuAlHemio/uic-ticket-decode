@@ -16,7 +16,7 @@ PASCAL_DIGITS_RE = regex.compile("^([\\p{N}]+)")
 
 
 TEMPLATE = """
-{%- macro serialize_sequence(type_name, type_def) -%}
+{%- macro rustify_sequence(type_name, type_def) -%}
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct {{ type_name|pascal|rust_identifier }} {
     {%- for member in type_def.members if member is not none %}
@@ -24,7 +24,7 @@ pub struct {{ type_name|pascal|rust_identifier }} {
     {%- endfor %}
 }
 impl {{ type_name|pascal|rust_identifier }} {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         {%- set ns = namespace(optional_index=0) %}
         {%- if type_def|sequence_is_extensible %}
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
@@ -72,14 +72,52 @@ impl {{ type_name|pascal|rust_identifier }} {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        {%- if type_def|sequence_is_extensible %}
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        {%- endif %}
+        {%- for member in type_def.members if member is not none %}
+            {%- if member.get("optional", false) %}
+                {%- if member.type == "SEQUENCE OF" %}
+        crate::asn1_uper::encode_bool(uper_buf, self.{{ member.name|snake|rust_identifier }}.len() > 0);
+                {%- else %}
+        crate::asn1_uper::encode_bool(uper_buf, self.{{ member.name|snake|rust_identifier }}.is_some());
+                {%- endif %}
+            {%- elif "default" in member %}
+        crate::asn1_uper::encode_bool(uper_buf, self.{{ member.name|snake|rust_identifier }} != {{ member|rust_default_value }});
+            {%- endif %}
+        {%- endfor %}
+        {%- for member in type_def.members if member is not none %}
+            {%- if member.get("optional", false) %}
+                {%- if member.type == "SEQUENCE OF" %}
+        if self.{{ member.name|snake|rust_identifier }}.len() > 0 {
+            {{ member|rust_serialize_call(type_name) }};
+        }
+                {%- else %}
+        if let Some(opt_val) = &self.{{ member.name|snake|rust_identifier }} {
+            {%- set opt_member = member|dict_replacing(name="opt_val") %}
+            {{ opt_member|rust_serialize_call(type_name, self_prefix=None, deref=True) }};
+        }
+                {%- endif %}
+            {%- elif "default" in member %}
+        if self.{{ member.name|snake|rust_identifier }} != {{ member|rust_default_value }} {
+            {{ member|rust_serialize_call(type_name) }};
+        }
+            {%- else %}
+        {{ member|rust_serialize_call(type_name) }};
+            {%- endif %}
+        {%- endfor %}
+        Ok(())
+    }
 }
 {#- and now, the inline choice definitions #}
 {%- for member in type_def.members if member is not none and member.type == "CHOICE" %}
-{{ serialize_choice(type_name|pascal + member.name|pascal, member) }}
+{{ rustify_choice(type_name|pascal + member.name|pascal, member) }}
 {%- endfor %}
 {%- endmacro -%}
 
-{%- macro serialize_enumerated(type_name, type_def) -%}
+{%- macro rustify_enumerated(type_name, type_def) -%}
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
 pub enum {{ type_name|pascal|rust_identifier }} {
@@ -88,7 +126,7 @@ pub enum {{ type_name|pascal|rust_identifier }} {
     {%- endfor %}
 }
 impl {{ type_name|pascal|rust_identifier }} {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         {%- if type_def|enum_is_extensible %}
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
@@ -112,10 +150,27 @@ impl {{ type_name|pascal|rust_identifier }} {
             {%- endfor %}
         {%- endif %}
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        {%- if type_def|enum_is_extensible %}
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        {%- endif %}
+        {#- an enumeration with a single option is never explicitly encoded #}
+        {%- if type_def|enum_base_option_count > 1 %}
+        let integer_value = match self {
+            {#- the data is encoded as the index, not as the value! #}
+            {%- for kvp in type_def["values"] if kvp is not none %}
+            Self::{{ kvp[0]|pascal|rust_identifier }} => crate::asn1_uper::Integer::from_short({{ loop.index0 }}),
+            {%- endfor %}
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short({{ type_def|enum_base_option_count - 1 }}) }, &integer_value)?;
+        {%- endif %}
+        Ok(())
+    }
 }
 {%- endmacro -%}
 
-{%- macro serialize_choice(type_name, type_def) -%}
+{%- macro rustify_choice(type_name, type_def) -%}
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum {{ type_name|pascal|rust_identifier }} {
     {%- for member in type_def.members if member is not none %}
@@ -123,7 +178,7 @@ pub enum {{ type_name|pascal|rust_identifier }} {
     {%- endfor %}
 }
 impl {{ type_name|pascal|rust_identifier }} {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         {%- if type_def|choice_is_extensible %}
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
@@ -152,12 +207,31 @@ impl {{ type_name|pascal|rust_identifier }} {
             {%- endfor %}
         {%- endif %}
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        {%- if type_def|choice_is_extensible %}
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        {%- endif %}
+        {#- a choice with a single option is never explicitly encoded #}
+        {%- if type_def|choice_base_option_count > 1 %}
+        match self {
+            {%- for member in type_def.members if member is not none %}
+            Self::{{ member.name|pascal|rust_identifier }}(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short({{ loop.index0 }});
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short({{ type_def|choice_base_option_count }}) }, &index)?;
+                {{ {"type": member.type, "name": "inner_value"}|rust_serialize_call(self_prefix=None) }};
+            },
+            {%- endfor %}
+        };
+        {%- endif %}
+        Ok(())
+    }
 }
 {%- endmacro -%}
 
-{%- if type_def.type == "SEQUENCE" -%}{{ serialize_sequence(type_name, type_def) }}
-{%- elif type_def.type == "ENUMERATED" -%}{{ serialize_enumerated(type_name, type_def) }}
-{%- elif type_def.type == "CHOICE" -%}{{ serialize_choice(type_name, type_def) }}
+{%- if type_def.type == "SEQUENCE" -%}{{ rustify_sequence(type_name, type_def) }}
+{%- elif type_def.type == "ENUMERATED" -%}{{ rustify_enumerated(type_name, type_def) }}
+{%- elif type_def.type == "CHOICE" -%}{{ rustify_choice(type_name, type_def) }}
 {%- else -%}{{ raise_value_error("Cannot handle type " + type_def.type + " for " + type_name) }}
 {%- endif -%}
 """
@@ -211,6 +285,12 @@ def rust_identifier(name: str) -> str:
     if name == "type":
         return name + "_"
     return name
+
+def dict_replacing(dictionary, **kvps):
+    ret = dict(dictionary)
+    for key, value in kvps.items():
+        ret[key] = value
+    return ret
 
 
 def to_rust_type(type_def: dict[str, Any], parent_type: Optional[str] = None) -> str:
@@ -293,6 +373,46 @@ def rust_deserialize_call(member: Union[dict[str, Any], str], parent_type: Optio
         return f"{to_pascal_case(type_name)}::try_from_uper(rest)?"
 
 
+def rust_serialize_call(member: Union[dict[str, Any], str], parent_type: Optional[str] = None, self_prefix: bool = True, deref: bool = False) -> str:
+    if isinstance(member, str):
+        member = {"type": member}
+    rust_member_name = rust_identifier(to_snake_case(member["name"]))
+    self_prefix_text = "self." if self_prefix else ""
+    type_name = member["type"]
+    if type_name == "INTEGER":
+        constraints = member.get("restricted-to", None)
+        if constraints is not None:
+            (int_min, int_max) = constraints[0]
+            constraint_string = f"Constrained {{ min: crate::asn1_uper::Integer::from_short({int_min}), max: crate::asn1_uper::Integer::from_short({int_max}) }}"
+        # TODO: semi-constrained?
+        else:
+            constraint_string = "Unconstrained"
+        return f"crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::{constraint_string}, &{self_prefix_text}{rust_member_name})?"
+    elif type_name == "OCTET STRING":
+        return f"crate::asn1_uper::encode_octet_string(uper_buf, &{self_prefix_text}{rust_member_name})?"
+    elif type_name == "BOOLEAN":
+        star = "*" if deref else ""
+        return f"crate::asn1_uper::encode_bool(uper_buf, {star}{self_prefix_text}{rust_member_name})"
+    elif type_name == "UTF8String":
+        return f"crate::asn1_uper::encode_octet_string(uper_buf, {self_prefix_text}{rust_member_name}.as_bytes())?"
+    elif type_name == "IA5String":
+        return f"crate::asn1_uper::encode_ia5_string(uper_buf, &{self_prefix_text}{rust_member_name})?"
+    elif type_name == "SEQUENCE OF":
+        # TODO: handle length constraints
+        member_element = dict(member["element"])
+        member_element["name"] = "item"
+        lines = ["{"]
+        lines.append(f"    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, {self_prefix_text}{rust_member_name}.len())?;")
+        lines.append(f"    for item in &{self_prefix_text}{rust_member_name} {{")
+        lines.append("        " + rust_serialize_call(member_element, parent_type, self_prefix=False) + ";")
+        lines.append("    }")
+        lines.append("}")
+        return "\n".join(lines)
+    else:
+        # includes CHOICE
+        return f"{self_prefix_text}{rust_member_name}.write_uper(uper_buf)?"
+
+
 def rust_default_value(member: Union[dict[str, Any], str]) -> str:
     if isinstance(member, str):
         member = {"type": member}
@@ -306,7 +426,7 @@ def rust_default_value(member: Union[dict[str, Any], str]) -> str:
         return f"{to_pascal_case(type_name)}::{to_pascal_case(member['default'])}"
 
 
-def serialize_type(type_name: str, type_def: dict[str, Any]) -> str:
+def rustify_type(type_name: str, type_def: dict[str, Any]) -> str:
     env = jinja2.Environment(undefined=jinja2.StrictUndefined)
     env.filters["pascal"] = to_pascal_case
     env.filters["camel"] = to_camel_case
@@ -320,8 +440,11 @@ def serialize_type(type_name: str, type_def: dict[str, Any]) -> str:
     env.filters["enum_base_option_count"] = lambda type_def: sum(1 for e in type_def["values"] if e is not None)
     env.filters["choice_base_option_count"] = lambda type_def: sum(1 for e in type_def["members"] if e is not None)
     env.filters["rust_deserialize_call"] = rust_deserialize_call
+    env.filters["rust_serialize_call"] = rust_serialize_call
     env.filters["rust_identifier"] = rust_identifier
     env.filters["rust_default_value"] = rust_default_value
+    env.filters["repr"] = repr
+    env.filters["dict_replacing"] = dict_replacing
 
     tpl = env.from_string(TEMPLATE)
     return tpl.render(type_name=type_name, type_def=type_def)
@@ -353,7 +476,7 @@ def main():
         args.rust_dest.write("\n")
 
         for type_name, type_def in asn1_def["types"].items():
-            type_string = serialize_type(type_name, type_def)
+            type_string = rustify_type(type_name, type_def)
             args.rust_dest.write(type_string)
             args.rust_dest.write("\n")
 

@@ -5,13 +5,13 @@ mod utlay_painter;
 
 
 use std::io::{Cursor, Read};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use clap::Parser;
 use flate2;
 use rxing;
 
-use crate::asn1_uper::to_bits_msb_first;
+use crate::asn1_uper::{to_bits_msb_first, to_bytes_msb_first};
 use crate::uflex_3_ext::output_ticket_validity;
 
 
@@ -29,6 +29,9 @@ struct BarcodeArgs {
 #[derive(Parser)]
 struct DataArgs {
     pub data_path: PathBuf,
+
+    #[arg(short, long)]
+    pub re_encode_path: Option<PathBuf>,
 }
 
 
@@ -42,18 +45,19 @@ fn hexdump(bs: &[u8]) {
 
 fn main() {
     let prog_mode = ProgMode::parse();
-    let barcode_contents = match prog_mode {
+    let (barcode_contents, re_encode_path) = match prog_mode {
         ProgMode::Barcode(barcode_args) => {
             let barcode = rxing::helpers::detect_in_file(&barcode_args.barcode_path, None)
                 .expect("failed to detect Aztec barcode");
             let barcode_contents: Vec<u8> = barcode.getText().chars()
                 .map(|c| u8::try_from(u32::from(c)).expect("failed to decode character as byte"))
                 .collect();
-            barcode_contents
+            (barcode_contents, None)
         },
         ProgMode::Data(data_args) => {
-            std::fs::read(&data_args.data_path)
-                .expect("failed to read barcode data")
+            let data = std::fs::read(&data_args.data_path)
+                .expect("failed to read barcode data");
+            (data, data_args.re_encode_path)
         },
     };
 
@@ -155,15 +159,15 @@ fn main() {
         println!("  length (including ID and version): {}", record_length);
 
         let record_data = &remaining_bytes[12..record_length];
-        decode_record(record_id, record_version, record_data);
+        decode_record(record_id, record_version, record_data, re_encode_path.as_ref().map(|p| p.as_path()));
 
         remaining_bytes = &remaining_bytes[record_length..];
     }
 }
 
-fn decode_record(record_id: &[u8], record_version: &[u8], record_data: &[u8]) {
+fn decode_record(record_id: &[u8], record_version: &[u8], record_data: &[u8], re_encode_path: Option<&Path>) {
     if record_id == b"U_FLEX" && record_version == b"03" {
-        decode_record_uflex_3(record_data);
+        decode_record_uflex_3(record_data, re_encode_path);
     } else if record_id == b"U_HEAD" && record_version == b"01" {
         decode_record_uhead_1(record_data);
     } else if record_id == b"U_TLAY" && record_version == b"01" {
@@ -174,11 +178,16 @@ fn decode_record(record_id: &[u8], record_version: &[u8], record_data: &[u8]) {
     }
 }
 
-fn decode_record_uflex_3(record_data: &[u8]) {
+fn decode_record_uflex_3(record_data: &[u8], re_encode_path: Option<&Path>) {
     // https://github.com/UnionInternationalCheminsdeFer/UIC-barcode/blob/master/misc/uicRailTicketData_v3.0.3.asn
 
     // convert record data to bits
     let record_data_bits = to_bits_msb_first(record_data);
+    println!("record data bit dump:");
+    for &bit in &record_data_bits {
+        print!("{}", if bit { '1' } else { '0' });
+    }
+    println!();
 
     // the top structure is UicRailTicketData
     let (_rest, uic_rail_ticket_data) = crate::uflex_3::UicRailTicketData::try_from_uper(&record_data_bits)
@@ -188,6 +197,22 @@ fn decode_record_uflex_3(record_data: &[u8]) {
 
     // output interpreted date/time info
     output_ticket_validity(&uic_rail_ticket_data.issuing_detail, &uic_rail_ticket_data.transport_document);
+
+    if let Some(path) = re_encode_path {
+        let mut buf = Vec::new();
+        uic_rail_ticket_data.write_uper(&mut buf)
+            .expect("failed to re-encode UicRailTicketData");
+
+        println!("reencoded data bit dump:");
+        for &bit in &buf {
+            print!("{}", if bit { '1' } else { '0' });
+        }
+        println!();
+
+        let bytes = to_bytes_msb_first(&buf);
+        std::fs::write(path, &bytes)
+            .expect("failed to write re-encoded data");
+    }
 }
 
 fn bytes_to_string(bs: &[u8]) -> String {

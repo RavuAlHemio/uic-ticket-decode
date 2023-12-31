@@ -10,7 +10,7 @@ pub struct UicRailTicketData {
     pub extension: Vec<ExtensionData>,
 }
 impl UicRailTicketData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -70,6 +70,38 @@ impl UicRailTicketData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.traveler_detail.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.transport_document.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.control_detail.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.len() > 0);
+        self.issuing_detail.write_uper(uper_buf)?;
+        if let Some(opt_val) = &self.traveler_detail {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if self.transport_document.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.transport_document.len())?;
+    for item in &self.transport_document {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.control_detail {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if self.extension.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.extension.len())?;
+    for item in &self.extension {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct DocumentData {
@@ -77,7 +109,7 @@ pub struct DocumentData {
     pub ticket: DocumentDataTicket,
 }
 impl DocumentData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -96,6 +128,16 @@ impl DocumentData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.token.is_some());
+        if let Some(opt_val) = &self.token {
+            opt_val.write_uper(uper_buf)?;
+        }
+        self.ticket.write_uper(uper_buf)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum DocumentDataTicket {
@@ -113,7 +155,7 @@ pub enum DocumentDataTicket {
     DelayConfirmation(DelayConfirmation),
 }
 impl DocumentDataTicket {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -184,6 +226,73 @@ impl DocumentDataTicket {
         };
         Ok((rest, choice_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        match self {
+            Self::Reservation(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(0);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::CarCarriageReservation(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(1);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::OpenTicket(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(2);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::Pass(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(3);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::Voucher(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(4);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::CustomerCard(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(5);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::CounterMark(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(6);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::ParkingGround(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(7);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::FipTicket(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(8);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::StationPassage(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(9);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::Extension(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(10);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::DelayConfirmation(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(11);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(12) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+        };
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct DelayConfirmation {
@@ -206,7 +315,7 @@ pub struct DelayConfirmation {
     pub extension: Option<ExtensionData>,
 }
 impl DelayConfirmation {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -351,6 +460,78 @@ impl DelayConfirmation {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.train_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.train_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.departure_year.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.departure_day.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.departure_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.departure_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.confirmation_type != ConfirmationType::TravelerDelayConfirmation);
+        crate::asn1_uper::encode_bool(uper_buf, self.affected_tickets.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.train_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.train_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.departure_year {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2016), max: crate::asn1_uper::Integer::from_short(2269) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.departure_day {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(366) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.departure_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.departure_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(999) }, &self.delay)?;
+        crate::asn1_uper::encode_bool(uper_buf, self.train_cancelled);
+        if self.confirmation_type != ConfirmationType::TravelerDelayConfirmation {
+            self.confirmation_type.write_uper(uper_buf)?;
+        }
+        if self.affected_tickets.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.affected_tickets.len())?;
+    for item in &self.affected_tickets {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.info_text {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -360,7 +541,7 @@ pub enum ConfirmationType {
     TrainLinkedTicketDelay = 2,
 }
 impl ConfirmationType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -373,6 +554,17 @@ impl ConfirmationType {
             other => panic!("unexpected ConfirmationType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        let integer_value = match self {
+            Self::TrainDelayConfirmation => crate::asn1_uper::Integer::from_short(0),
+            Self::TravelerDelayConfirmation => crate::asn1_uper::Integer::from_short(1),
+            Self::TrainLinkedTicketDelay => crate::asn1_uper::Integer::from_short(2),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(2) }, &integer_value)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -398,7 +590,7 @@ pub struct IssuingData {
     pub point_of_sale: Option<GeoCoordinateType>,
 }
 impl IssuingData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -535,6 +727,69 @@ impl IssuingData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.security_provider_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.security_provider_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issuer_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issuer_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issuer_name.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.currency != "EUR".to_owned());
+        crate::asn1_uper::encode_bool(uper_buf, self.currency_fract != crate::asn1_uper::Integer::from_short(2));
+        crate::asn1_uper::encode_bool(uper_buf, self.issuer_pnr.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issued_on_train_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issued_on_train_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issued_on_line.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.point_of_sale.is_some());
+        if let Some(opt_val) = &self.security_provider_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.security_provider_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.issuer_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.issuer_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2016), max: crate::asn1_uper::Integer::from_short(2269) }, &self.issuing_year)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(366) }, &self.issuing_day)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &self.issuing_time)?;
+        if let Some(opt_val) = &self.issuer_name {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.specimen);
+        crate::asn1_uper::encode_bool(uper_buf, self.secure_paper_ticket);
+        crate::asn1_uper::encode_bool(uper_buf, self.activated);
+        if self.currency != "EUR".to_owned() {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &self.currency)?;
+        }
+        if self.currency_fract != crate::asn1_uper::Integer::from_short(2) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(3) }, &self.currency_fract)?;
+        }
+        if let Some(opt_val) = &self.issuer_pnr {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.issued_on_train_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.issued_on_train_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.issued_on_line {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.point_of_sale {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ControlData {
@@ -552,7 +807,7 @@ pub struct ControlData {
     pub extension: Option<ExtensionData>,
 }
 impl ControlData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -640,6 +895,51 @@ impl ControlData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.identification_by_card_reference.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.identification_item.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.random_detailed_validation_required.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.included_tickets.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if self.identification_by_card_reference.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.identification_by_card_reference.len())?;
+    for item in &self.identification_by_card_reference {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.identification_by_id_card);
+        crate::asn1_uper::encode_bool(uper_buf, self.identification_by_passport_id);
+        if let Some(opt_val) = &self.identification_item {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.passport_validation_required);
+        crate::asn1_uper::encode_bool(uper_buf, self.online_validation_required);
+        if let Some(opt_val) = &self.random_detailed_validation_required {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(99) }, &opt_val)?;
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.age_check_required);
+        crate::asn1_uper::encode_bool(uper_buf, self.reduction_card_check_required);
+        if let Some(opt_val) = &self.info_text {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.included_tickets.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_tickets.len())?;
+    for item in &self.included_tickets {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct TravelerData {
@@ -648,7 +948,7 @@ pub struct TravelerData {
     pub group_name: Option<String>,
 }
 impl TravelerData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -696,6 +996,28 @@ impl TravelerData {
             group_name,
         };
         Ok((rest, sequence))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.traveler.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.preferred_language.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.group_name.is_some());
+        if self.traveler.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.traveler.len())?;
+    for item in &self.traveler {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.preferred_language {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.group_name {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -746,7 +1068,7 @@ pub struct ReservationData {
     pub extension: Option<ExtensionData>,
 }
 impl ReservationData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -1161,6 +1483,209 @@ impl ReservationData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.train_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.train_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.departure_date != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.service_brand.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.service_brand_abr_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.service_brand_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.service != ServiceType::Seat);
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUicReservation);
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.departure_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.arrival_date != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.arrival_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.arrival_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.class_code != TravelClassType::Second);
+        crate::asn1_uper::encode_bool(uper_buf, self.service_level.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.places.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.additional_places.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.bicycle_places.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.compartment_details.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.number_of_overbooked != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.berth.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.tariff.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.price_type != PriceTypeType::TravelPrice);
+        crate::asn1_uper::encode_bool(uper_buf, self.price.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.vat_detail.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.type_of_supplement != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.number_of_supplements != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.luggage.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.train_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.train_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.departure_date != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.departure_date)?;
+        }
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.service_brand {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.service_brand_abr_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.service_brand_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.service != ServiceType::Seat {
+            self.service.write_uper(uper_buf)?;
+        }
+        if self.station_code_table != CodeTableType::StationUicReservation {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.from_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.to_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &self.departure_time)?;
+        if let Some(opt_val) = &self.departure_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.arrival_date != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(20) }, &self.arrival_date)?;
+        }
+        if let Some(opt_val) = &self.arrival_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.arrival_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_num.len())?;
+    for item in &self.carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
+    for item in &self.carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.class_code != TravelClassType::Second {
+            self.class_code.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.service_level {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.places {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.additional_places {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.bicycle_places {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.compartment_details {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if self.number_of_overbooked != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(200) }, &self.number_of_overbooked)?;
+        }
+        if self.berth.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.berth.len())?;
+    for item in &self.berth {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if self.tariff.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.tariff.len())?;
+    for item in &self.tariff {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if self.price_type != PriceTypeType::TravelPrice {
+            self.price_type.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.price {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if self.vat_detail.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.vat_detail.len())?;
+    for item in &self.vat_detail {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if self.type_of_supplement != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(9) }, &self.type_of_supplement)?;
+        }
+        if self.number_of_supplements != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(200) }, &self.number_of_supplements)?;
+        }
+        if let Some(opt_val) = &self.luggage {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.info_text {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct VatDetailType {
@@ -1170,7 +1695,7 @@ pub struct VatDetailType {
     pub vat_id: Option<String>,
 }
 impl VatDetailType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 2)?;
         let (rest, country) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(999) })?;
         let (rest, percentage) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(999) })?;
@@ -1197,6 +1722,20 @@ impl VatDetailType {
             vat_id,
         };
         Ok((rest, sequence))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.amount.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.vat_id.is_some());
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(999) }, &self.country)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(999) }, &self.percentage)?;
+        if let Some(opt_val) = &self.amount {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.vat_id {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -1248,7 +1787,7 @@ pub struct CarCarriageReservationData {
     pub extension: Option<ExtensionData>,
 }
 impl CarCarriageReservationData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -1647,6 +2186,194 @@ impl CarCarriageReservationData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.train_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.train_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.begin_loading_date != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.begin_loading_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.end_loading_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.loading_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.service_brand.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.service_brand_abr_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.service_brand_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUicReservation);
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.coach.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.place.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.compartment_details.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.trailer_plate.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.boat_category.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.roof_rack_type != RoofRackType::Norack);
+        crate::asn1_uper::encode_bool(uper_buf, self.roof_rack_height.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.attached_boats.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.attached_bicycles.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.attached_surfboards.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.loading_list_entry.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.loading_deck != LoadingDeckType::Upper);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.price_type != PriceTypeType::TravelPrice);
+        crate::asn1_uper::encode_bool(uper_buf, self.price.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.vat_detail.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.train_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.train_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.begin_loading_date != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.begin_loading_date)?;
+        }
+        if let Some(opt_val) = &self.begin_loading_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.end_loading_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.loading_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.service_brand {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.service_brand_abr_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.service_brand_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.station_code_table != CodeTableType::StationUicReservation {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.from_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.to_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.coach {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.place {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.compartment_details {
+            opt_val.write_uper(uper_buf)?;
+        }
+        crate::asn1_uper::encode_ia5_string(uper_buf, &self.number_plate)?;
+        if let Some(opt_val) = &self.trailer_plate {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(9) }, &self.car_category)?;
+        if let Some(opt_val) = &self.boat_category {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(6) }, &opt_val)?;
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.textile_roof);
+        if self.roof_rack_type != RoofRackType::Norack {
+            self.roof_rack_type.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.roof_rack_height {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(99) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.attached_boats {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(2) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.attached_bicycles {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(4) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.attached_surfboards {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(5) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.loading_list_entry {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(999) }, &opt_val)?;
+        }
+        if self.loading_deck != LoadingDeckType::Upper {
+            self.loading_deck.write_uper(uper_buf)?;
+        }
+        if self.carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_num.len())?;
+    for item in &self.carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
+    for item in &self.carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        self.tariff.write_uper(uper_buf)?;
+        if self.price_type != PriceTypeType::TravelPrice {
+            self.price_type.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.price {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if self.vat_detail.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.vat_detail.len())?;
+    for item in &self.vat_detail {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.info_text {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct OpenTicketData {
@@ -1693,7 +2420,7 @@ pub struct OpenTicketData {
     pub extension: Option<ExtensionData>,
 }
 impl OpenTicketData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -2139,6 +2866,227 @@ impl OpenTicketData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.ext_issuer_id.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issuer_autorization_id.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_region_desc.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_region.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.return_description.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.activated_day.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.class_code != TravelClassType::Second);
+        crate::asn1_uper::encode_bool(uper_buf, self.service_level.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.included_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.tariffs.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.price.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.vat_detail.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.included_add_ons.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.luggage.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.included_transport_type.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_transport_type.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.ext_issuer_id {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.issuer_autorization_id {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.return_included);
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.from_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.to_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.valid_region_desc {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.valid_region.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.valid_region.len())?;
+    for item in &self.valid_region {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.return_description {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if self.valid_from_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) }, &self.valid_from_day)?;
+        }
+        if let Some(opt_val) = &self.valid_from_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_from_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.valid_until_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_until_day)?;
+        }
+        if let Some(opt_val) = &self.valid_until_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_until_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.activated_day.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.activated_day.len())?;
+    for item in &self.activated_day {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &item)?;
+    }
+};
+        }
+        if self.class_code != TravelClassType::Second {
+            self.class_code.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.service_level {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_num.len())?;
+    for item in &self.carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
+    for item in &self.carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.included_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_service_brands.len())?;
+    for item in &self.included_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.excluded_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_service_brands.len())?;
+    for item in &self.excluded_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.tariffs.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.tariffs.len())?;
+    for item in &self.tariffs {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.price {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if self.vat_detail.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.vat_detail.len())?;
+    for item in &self.vat_detail {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.info_text {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.included_add_ons.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_add_ons.len())?;
+    for item in &self.included_add_ons {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.luggage {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if self.included_transport_type.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_transport_type.len())?;
+    for item in &self.included_transport_type {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(31) }, &item)?;
+    }
+};
+        }
+        if self.excluded_transport_type.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_transport_type.len())?;
+    for item in &self.excluded_transport_type {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(31) }, &item)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct PassData {
@@ -2178,7 +3126,7 @@ pub struct PassData {
     pub extension: Option<ExtensionData>,
 }
 impl PassData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -2564,6 +3512,202 @@ impl PassData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.pass_type.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.pass_description.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.class_code != TravelClassType::Second);
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.validity_period_details.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.number_of_validity_days.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.train_validity.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.number_of_possible_trips.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.number_of_days_of_travel.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.activated_day.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.countries.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.included_carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.included_carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.included_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_region.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.tariffs.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.price.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.vat_detail.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.pass_type {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(250) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.pass_description {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.class_code != TravelClassType::Second {
+            self.class_code.write_uper(uper_buf)?;
+        }
+        if self.valid_from_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) }, &self.valid_from_day)?;
+        }
+        if let Some(opt_val) = &self.valid_from_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_from_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.valid_until_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_until_day)?;
+        }
+        if let Some(opt_val) = &self.valid_until_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_until_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.validity_period_details {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.number_of_validity_days {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.train_validity {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.number_of_possible_trips {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(250) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.number_of_days_of_travel {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(250) }, &opt_val)?;
+        }
+        if self.activated_day.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.activated_day.len())?;
+    for item in &self.activated_day {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &item)?;
+    }
+};
+        }
+        if self.countries.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.countries.len())?;
+    for item in &self.countries {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(250) }, &item)?;
+    }
+};
+        }
+        if self.included_carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_carrier_num.len())?;
+    for item in &self.included_carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.included_carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_carrier_ia_5.len())?;
+    for item in &self.included_carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.excluded_carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_carrier_num.len())?;
+    for item in &self.excluded_carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.excluded_carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_carrier_ia_5.len())?;
+    for item in &self.excluded_carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.included_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_service_brands.len())?;
+    for item in &self.included_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.excluded_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_service_brands.len())?;
+    for item in &self.excluded_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.valid_region.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.valid_region.len())?;
+    for item in &self.valid_region {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if self.tariffs.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.tariffs.len())?;
+    for item in &self.tariffs {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.price {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if self.vat_detail.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.vat_detail.len())?;
+    for item in &self.vat_detail {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.info_text {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct TrainValidityType {
@@ -2582,7 +3726,7 @@ pub struct TrainValidityType {
     pub boarding_or_arrival: BoardingOrArrivalRestrictionType,
 }
 impl TrainValidityType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -2751,6 +3895,93 @@ impl TrainValidityType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.included_carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.included_carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.included_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.boarding_or_arrival != BoardingOrArrivalRestrictionType::Boarding);
+        if self.valid_from_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) }, &self.valid_from_day)?;
+        }
+        if let Some(opt_val) = &self.valid_from_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_from_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.valid_until_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_until_day)?;
+        }
+        if let Some(opt_val) = &self.valid_until_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_until_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.included_carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_carrier_num.len())?;
+    for item in &self.included_carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.included_carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_carrier_ia_5.len())?;
+    for item in &self.included_carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.excluded_carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_carrier_num.len())?;
+    for item in &self.excluded_carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.excluded_carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_carrier_ia_5.len())?;
+    for item in &self.excluded_carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.included_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_service_brands.len())?;
+    for item in &self.included_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.excluded_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_service_brands.len())?;
+    for item in &self.excluded_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.boarding_or_arrival != BoardingOrArrivalRestrictionType::Boarding {
+            self.boarding_or_arrival.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ValidityPeriodDetailType {
@@ -2758,7 +3989,7 @@ pub struct ValidityPeriodDetailType {
     pub excluded_time_range: Vec<TimeRangeType>,
 }
 impl ValidityPeriodDetailType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 2)?;
         let (rest, validity_period) = if optional_bits[0] {
             {
@@ -2798,6 +4029,28 @@ impl ValidityPeriodDetailType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.validity_period.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_time_range.len() > 0);
+        if self.validity_period.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.validity_period.len())?;
+    for item in &self.validity_period {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if self.excluded_time_range.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_time_range.len())?;
+    for item in &self.excluded_time_range {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ValidityPeriodType {
@@ -2809,7 +4062,7 @@ pub struct ValidityPeriodType {
     pub valid_until_utc_offset: Option<crate::asn1_uper::Integer>,
 }
 impl ValidityPeriodType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 6)?;
         let (rest, valid_from_day) = if optional_bits[0] {
             crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) })?
@@ -2857,6 +4110,34 @@ impl ValidityPeriodType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_utc_offset.is_some());
+        if self.valid_from_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) }, &self.valid_from_day)?;
+        }
+        if let Some(opt_val) = &self.valid_from_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_from_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.valid_until_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_until_day)?;
+        }
+        if let Some(opt_val) = &self.valid_until_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_until_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct TimeRangeType {
@@ -2864,7 +4145,7 @@ pub struct TimeRangeType {
     pub until_time: crate::asn1_uper::Integer,
 }
 impl TimeRangeType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, from_time) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) })?;
         let (rest, until_time) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) })?;
         let sequence = Self {
@@ -2872,6 +4153,12 @@ impl TimeRangeType {
             until_time,
         };
         Ok((rest, sequence))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &self.from_time)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &self.until_time)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -2892,7 +4179,7 @@ pub struct VoucherData {
     pub extension: Option<ExtensionData>,
 }
 impl VoucherData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -2996,6 +4283,55 @@ impl VoucherData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.value != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.type_.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2016), max: crate::asn1_uper::Integer::from_short(2269) }, &self.valid_from_year)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_from_day)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2016), max: crate::asn1_uper::Integer::from_short(2269) }, &self.valid_until_year)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_until_day)?;
+        if self.value != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.value)?;
+        }
+        if let Some(opt_val) = &self.type_ {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.info_text {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct FipTicketData {
@@ -3016,7 +4352,7 @@ pub struct FipTicketData {
     pub extension: Option<ExtensionData>,
 }
 impl FipTicketData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -3167,6 +4503,80 @@ impl FipTicketData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.activated_day.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.class_code != TravelClassType::Second);
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.valid_from_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) }, &self.valid_from_day)?;
+        }
+        if self.valid_until_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_until_day)?;
+        }
+        if self.activated_day.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.activated_day.len())?;
+    for item in &self.activated_day {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &item)?;
+    }
+};
+        }
+        if self.carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_num.len())?;
+    for item in &self.carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
+    for item in &self.carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(200) }, &self.number_of_travel_days)?;
+        crate::asn1_uper::encode_bool(uper_buf, self.includes_supplements);
+        if self.class_code != TravelClassType::Second {
+            self.class_code.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct StationPassageData {
@@ -3194,7 +4604,7 @@ pub struct StationPassageData {
     pub extension: Option<ExtensionData>,
 }
 impl StationPassageData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -3445,6 +4855,126 @@ impl StationPassageData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_name.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.station_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.station_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.station_name_utf_8.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.area_code_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.area_code_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.area_name_utf_8.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.number_of_days_valid.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_name {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if self.station_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.station_num.len())?;
+    for item in &self.station_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
+    }
+};
+        }
+        if self.station_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.station_ia_5.len())?;
+    for item in &self.station_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.station_name_utf_8.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.station_name_utf_8.len())?;
+    for item in &self.station_name_utf_8 {
+        crate::asn1_uper::encode_octet_string(uper_buf, item.as_bytes())?;
+    }
+};
+        }
+        if self.area_code_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.area_code_num.len())?;
+    for item in &self.area_code_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
+    }
+};
+        }
+        if self.area_code_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.area_code_ia_5.len())?;
+    for item in &self.area_code_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.area_name_utf_8.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.area_name_utf_8.len())?;
+    for item in &self.area_name_utf_8 {
+        crate::asn1_uper::encode_octet_string(uper_buf, item.as_bytes())?;
+    }
+};
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) }, &self.valid_from_day)?;
+        if let Some(opt_val) = &self.valid_from_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_from_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.valid_until_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_until_day)?;
+        }
+        if let Some(opt_val) = &self.valid_until_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_until_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.number_of_days_valid {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CustomerCardData {
@@ -3464,7 +4994,7 @@ pub struct CustomerCardData {
     pub extension: Option<ExtensionData>,
 }
 impl CustomerCardData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -3589,6 +5119,69 @@ impl CustomerCardData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.customer.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.card_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.card_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_day.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_year != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_day.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.class_code.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.card_type.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.card_type_descr.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.customer_status.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.customer_status_descr.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.included_services.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.customer {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.card_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.card_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2016), max: crate::asn1_uper::Integer::from_short(2269) }, &self.valid_from_year)?;
+        if let Some(opt_val) = &self.valid_from_day {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &opt_val)?;
+        }
+        if self.valid_until_year != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(250) }, &self.valid_until_year)?;
+        }
+        if let Some(opt_val) = &self.valid_until_day {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.class_code {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.card_type {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(1000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.card_type_descr {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.customer_status {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.customer_status_descr {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.included_services.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_services.len())?;
+    for item in &self.included_services {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ParkingGroundData {
@@ -3614,7 +5207,7 @@ pub struct ParkingGroundData {
     pub extension: Option<ExtensionData>,
 }
 impl ParkingGroundData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -3799,6 +5392,87 @@ impl ParkingGroundData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.until_parking_date != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.access_code.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.special_information.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.entry_track.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.number_plate.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.price.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.vat_detail.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        crate::asn1_uper::encode_ia5_string(uper_buf, &self.parking_ground_id)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(370) }, &self.from_parking_date)?;
+        if self.until_parking_date != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &self.until_parking_date)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.access_code {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        crate::asn1_uper::encode_octet_string(uper_buf, self.location.as_bytes())?;
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.station_ia_5 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.special_information {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.entry_track {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.number_plate {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.price {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if self.vat_detail.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.vat_detail.len())?;
+    for item in &self.vat_detail {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CountermarkData {
@@ -3839,7 +5513,7 @@ pub struct CountermarkData {
     pub extension: Option<ExtensionData>,
 }
 impl CountermarkData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -4172,6 +5846,164 @@ impl CountermarkData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.ticket_reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.ticket_reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_region_desc.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_region.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.return_description.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.class_code != TravelClassType::Second);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.included_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.ticket_reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.ticket_reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(200) }, &self.number_of_countermark)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(200) }, &self.total_of_countermarks)?;
+        crate::asn1_uper::encode_octet_string(uper_buf, self.group_name.as_bytes())?;
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.from_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.to_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.valid_region_desc {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.valid_region.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.valid_region.len())?;
+    for item in &self.valid_region {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.return_included);
+        if let Some(opt_val) = &self.return_description {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if self.valid_from_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) }, &self.valid_from_day)?;
+        }
+        if let Some(opt_val) = &self.valid_from_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_from_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.valid_until_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_until_day)?;
+        }
+        if let Some(opt_val) = &self.valid_until_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_until_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.class_code != TravelClassType::Second {
+            self.class_code.write_uper(uper_buf)?;
+        }
+        if self.carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_num.len())?;
+    for item in &self.carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
+    for item in &self.carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.included_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_service_brands.len())?;
+    for item in &self.included_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.excluded_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_service_brands.len())?;
+    for item in &self.excluded_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.info_text {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ExtensionData {
@@ -4179,7 +6011,7 @@ pub struct ExtensionData {
     pub extension_data: Vec<u8>,
 }
 impl ExtensionData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, extension_id) = {
     let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
     let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
@@ -4191,6 +6023,12 @@ impl ExtensionData {
             extension_data,
         };
         Ok((rest, sequence))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &self.extension_id)?;
+        crate::asn1_uper::encode_octet_string(uper_buf, &self.extension_data)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -4222,7 +6060,7 @@ pub struct IncludedOpenTicketType {
     pub extension: Option<ExtensionData>,
 }
 impl IncludedOpenTicketType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -4507,6 +6345,151 @@ impl IncludedOpenTicketType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.external_issuer_id.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issuer_autorization_id.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_region.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_from_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_day != crate::asn1_uper::Integer::from_short(0));
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_time.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_until_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.class_code.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.service_level.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.included_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.tariffs.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.included_transport_type.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_transport_type.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.external_issuer_id {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.issuer_autorization_id {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if self.valid_region.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.valid_region.len())?;
+    for item in &self.valid_region {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if self.valid_from_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) }, &self.valid_from_day)?;
+        }
+        if let Some(opt_val) = &self.valid_from_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_from_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if self.valid_until_day != crate::asn1_uper::Integer::from_short(0) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_until_day)?;
+        }
+        if let Some(opt_val) = &self.valid_until_time {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.valid_until_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.class_code {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.service_level {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_num.len())?;
+    for item in &self.carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
+    for item in &self.carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.included_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_service_brands.len())?;
+    for item in &self.included_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.excluded_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_service_brands.len())?;
+    for item in &self.excluded_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.tariffs.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.tariffs.len())?;
+    for item in &self.tariffs {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.info_text {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.included_transport_type.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_transport_type.len())?;
+    for item in &self.included_transport_type {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(31) }, &item)?;
+    }
+};
+        }
+        if self.excluded_transport_type.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_transport_type.len())?;
+    for item in &self.excluded_transport_type {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(31) }, &item)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.extension {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct TariffType {
@@ -4524,7 +6507,7 @@ pub struct TariffType {
     pub reduction_card: Vec<CardReferenceType>,
 }
 impl TariffType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -4641,6 +6624,66 @@ impl TariffType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.number_of_passengers != crate::asn1_uper::Integer::from_short(1));
+        crate::asn1_uper::encode_bool(uper_buf, self.passenger_type.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.age_below.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.age_above.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.travelerid.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.restricted_to_route_section.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.series_data_details.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.tariff_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.tariff_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.tariff_desc.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reduction_card.len() > 0);
+        if self.number_of_passengers != crate::asn1_uper::Integer::from_short(1) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(200) }, &self.number_of_passengers)?;
+        }
+        if let Some(opt_val) = &self.passenger_type {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.age_below {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(64) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.age_above {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(128) }, &opt_val)?;
+        }
+        if self.travelerid.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.travelerid.len())?;
+    for item in &self.travelerid {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(254) }, &item)?;
+    }
+};
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.restricted_to_country_of_residence);
+        if let Some(opt_val) = &self.restricted_to_route_section {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.series_data_details {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.tariff_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.tariff_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.tariff_desc {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.reduction_card.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.reduction_card.len())?;
+    for item in &self.reduction_card {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct SeriesDetailType {
@@ -4649,7 +6692,7 @@ pub struct SeriesDetailType {
     pub series: Option<crate::asn1_uper::Integer>,
 }
 impl SeriesDetailType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 3)?;
         let (rest, supplying_carrier) = if optional_bits[0] {
             let (rest, value) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) })?;
@@ -4676,6 +6719,22 @@ impl SeriesDetailType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.supplying_carrier.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.offer_identification.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.series.is_some());
+        if let Some(opt_val) = &self.supplying_carrier {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.offer_identification {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(99) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.series {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct RouteSectionType {
@@ -4688,7 +6747,7 @@ pub struct RouteSectionType {
     pub to_station_name_utf_8: Option<String>,
 }
 impl RouteSectionType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 7)?;
         let (rest, station_code_table) = if optional_bits[0] {
             CodeTableType::try_from_uper(rest)?
@@ -4759,6 +6818,38 @@ impl RouteSectionType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_name_utf_8.is_some());
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.from_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.to_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CardReferenceType {
@@ -4774,7 +6865,7 @@ pub struct CardReferenceType {
     pub trailing_card_id_ia_5: Option<String>,
 }
 impl CardReferenceType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -4874,6 +6965,51 @@ impl CardReferenceType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.card_issuer_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.card_issuer_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.card_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.card_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.card_name.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.card_type.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.leading_card_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.leading_card_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.trailing_card_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.trailing_card_id_ia_5.is_some());
+        if let Some(opt_val) = &self.card_issuer_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.card_issuer_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.card_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.card_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.card_name {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.card_type {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.leading_card_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.leading_card_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.trailing_card_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.trailing_card_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct TravelerType {
@@ -4898,7 +7034,7 @@ pub struct TravelerType {
     pub status: Vec<CustomerStatusType>,
 }
 impl TravelerType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -5074,6 +7210,89 @@ impl TravelerType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.first_name.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.second_name.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.last_name.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.id_card.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.passport_id.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.title.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.gender.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.customer_id_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.customer_id_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.year_of_birth.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.month_of_birth.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.day_of_birth_in_month.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.passenger_type.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.passenger_with_reduced_mobility.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.country_of_residence.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.country_of_passport.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.country_of_id_card.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.status.len() > 0);
+        if let Some(opt_val) = &self.first_name {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.second_name {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.last_name {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.id_card {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.passport_id {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.title {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.gender {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.customer_id_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.customer_id_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.year_of_birth {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1901), max: crate::asn1_uper::Integer::from_short(2155) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.month_of_birth {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(12) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.day_of_birth_in_month {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(31) }, &opt_val)?;
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.ticket_holder);
+        if let Some(opt_val) = &self.passenger_type {
+            opt_val.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.passenger_with_reduced_mobility {
+            crate::asn1_uper::encode_bool(uper_buf, *opt_val);
+        }
+        if let Some(opt_val) = &self.country_of_residence {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.country_of_passport {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.country_of_id_card {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(999) }, &opt_val)?;
+        }
+        if self.status.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.status.len())?;
+    for item in &self.status {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CustomerStatusType {
@@ -5083,7 +7302,7 @@ pub struct CustomerStatusType {
     pub customer_status_descr: Option<String>,
 }
 impl CustomerStatusType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 4)?;
         let (rest, status_provider_num) = if optional_bits[0] {
             let (rest, value) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) })?;
@@ -5125,6 +7344,26 @@ impl CustomerStatusType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.status_provider_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.status_provider_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.customer_status.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.customer_status_descr.is_some());
+        if let Some(opt_val) = &self.status_provider_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.status_provider_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.customer_status {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.customer_status_descr {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ReturnRouteDescriptionType {
@@ -5138,7 +7377,7 @@ pub struct ReturnRouteDescriptionType {
     pub valid_return_region: Vec<RegionalValidityType>,
 }
 impl ReturnRouteDescriptionType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -5234,6 +7473,48 @@ impl ReturnRouteDescriptionType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_return_region_desc.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.valid_return_region.len() > 0);
+        if let Some(opt_val) = &self.from_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.to_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.valid_return_region_desc {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.valid_return_region.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.valid_return_region.len())?;
+    for item in &self.valid_return_region {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum RegionalValidityType {
@@ -5244,7 +7525,7 @@ pub enum RegionalValidityType {
     Polygone(PolygoneType),
 }
 impl RegionalValidityType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -5280,6 +7561,38 @@ impl RegionalValidityType {
         };
         Ok((rest, choice_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        match self {
+            Self::TrainLink(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(0);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(5) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::ViaStations(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(1);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(5) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::Zones(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(2);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(5) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::Lines(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(3);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(5) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+            Self::Polygone(inner_value) => {
+                let index = crate::asn1_uper::Integer::from_short(4);
+                crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(5) }, &index)?;
+                inner_value.write_uper(uper_buf)?;
+            },
+        };
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct TrainLinkType {
@@ -5296,7 +7609,7 @@ pub struct TrainLinkType {
     pub to_station_name_utf_8: Option<String>,
 }
 impl TrainLinkType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 9)?;
         let (rest, train_num) = if optional_bits[0] {
             let (rest, value) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
@@ -5389,6 +7702,48 @@ impl TrainLinkType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.train_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.train_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.departure_utc_offset.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.from_station_name_utf_8.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.to_station_name_utf_8.is_some());
+        if let Some(opt_val) = &self.train_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.train_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.travel_date)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &self.departure_time)?;
+        if let Some(opt_val) = &self.departure_utc_offset {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.to_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.from_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.to_station_name_utf_8 {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct LineType {
@@ -5403,7 +7758,7 @@ pub struct LineType {
     pub city: Option<crate::asn1_uper::Integer>,
 }
 impl LineType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -5498,6 +7853,52 @@ impl LineType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.line_id.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.entry_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.entry_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.terminating_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.terminating_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.city.is_some());
+        if let Some(opt_val) = &self.carrier_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.carrier_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.line_id.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.line_id.len())?;
+    for item in &self.line_id {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
+    }
+};
+        }
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.entry_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.entry_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.terminating_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.terminating_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.city {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ZoneType {
@@ -5514,7 +7915,7 @@ pub struct ZoneType {
     pub nuts_code: Option<String>,
 }
 impl ZoneType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -5627,6 +8028,60 @@ impl ZoneType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.entry_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.entry_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.terminating_station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.terminating_station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.city.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.zone_id.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.binary_zone_id.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.nuts_code.is_some());
+        if let Some(opt_val) = &self.carrier_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.carrier_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.entry_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.entry_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.terminating_station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.terminating_station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.city {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if self.zone_id.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.zone_id.len())?;
+    for item in &self.zone_id {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.binary_zone_id {
+            crate::asn1_uper::encode_octet_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.nuts_code {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ViaStationType {
@@ -5644,7 +8099,7 @@ pub struct ViaStationType {
     pub excluded_service_brands: Vec<crate::asn1_uper::Integer>,
 }
 impl ViaStationType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -5801,6 +8256,86 @@ impl ViaStationType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.station_code_table != CodeTableType::StationUic);
+        crate::asn1_uper::encode_bool(uper_buf, self.station_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.station_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.alternative_routes.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.route.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_num.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.carrier_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.series_id.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.route_id.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.included_service_brands.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.excluded_service_brands.len() > 0);
+        if self.station_code_table != CodeTableType::StationUic {
+            self.station_code_table.write_uper(uper_buf)?;
+        }
+        if let Some(opt_val) = &self.station_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.station_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.alternative_routes.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.alternative_routes.len())?;
+    for item in &self.alternative_routes {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        if self.route.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.route.len())?;
+    for item in &self.route {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        crate::asn1_uper::encode_bool(uper_buf, self.border);
+        if self.carrier_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_num.len())?;
+    for item in &self.carrier_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.carrier_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
+    for item in &self.carrier_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if let Some(opt_val) = &self.series_id {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.route_id {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if self.included_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_service_brands.len())?;
+    for item in &self.included_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        if self.excluded_service_brands.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_service_brands.len())?;
+    for item in &self.excluded_service_brands {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &item)?;
+    }
+};
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct PolygoneType {
@@ -5808,7 +8343,7 @@ pub struct PolygoneType {
     pub edges: Vec<DeltaCoordinates>,
 }
 impl PolygoneType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, first_edge) = GeoCoordinateType::try_from_uper(rest)?;
         let (rest, edges) = {
     let (mut rest, length_integer) = crate::asn1_uper::decode_length(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
@@ -5828,6 +8363,17 @@ impl PolygoneType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        self.first_edge.write_uper(uper_buf)?;
+        {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.edges.len())?;
+    for item in &self.edges {
+        item.write_uper(uper_buf)?;
+    }
+};
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct TokenType {
@@ -5837,7 +8383,7 @@ pub struct TokenType {
     pub token: Vec<u8>,
 }
 impl TokenType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 3)?;
         let (rest, token_provider_num) = if optional_bits[0] {
             let (rest, value) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
@@ -5874,6 +8420,23 @@ impl TokenType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.token_provider_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.token_provider_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.token_specification.is_some());
+        if let Some(opt_val) = &self.token_provider_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.token_provider_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.token_specification {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        crate::asn1_uper::encode_octet_string(uper_buf, &self.token)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct TicketLinkType {
@@ -5887,7 +8450,7 @@ pub struct TicketLinkType {
     pub link_mode: LinkMode,
 }
 impl TicketLinkType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -5969,6 +8532,43 @@ impl TicketLinkType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.reference_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issuer_name.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.issuer_pnr.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_num.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.product_owner_ia_5.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.ticket_type != TicketType::OpenTicket);
+        crate::asn1_uper::encode_bool(uper_buf, self.link_mode != LinkMode::IssuedTogether);
+        if let Some(opt_val) = &self.reference_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.reference_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.issuer_name {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.issuer_pnr {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_num {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.product_owner_ia_5 {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if self.ticket_type != TicketType::OpenTicket {
+            self.ticket_type.write_uper(uper_buf)?;
+        }
+        if self.link_mode != LinkMode::IssuedTogether {
+            self.link_mode.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -5980,7 +8580,7 @@ pub enum CodeTableType {
     ProprietaryIssuerStationCodeTable = 4,
 }
 impl CodeTableType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(4) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::StationUic,
@@ -5992,6 +8592,18 @@ impl CodeTableType {
         };
         Ok((rest, enum_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::StationUic => crate::asn1_uper::Integer::from_short(0),
+            Self::StationUicReservation => crate::asn1_uper::Integer::from_short(1),
+            Self::StationEra => crate::asn1_uper::Integer::from_short(2),
+            Self::LocalCarrierStationCodeTable => crate::asn1_uper::Integer::from_short(3),
+            Self::ProprietaryIssuerStationCodeTable => crate::asn1_uper::Integer::from_short(4),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(4) }, &integer_value)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -6002,7 +8614,7 @@ pub enum ServiceType {
     Carcarriage = 3,
 }
 impl ServiceType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(3) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::Seat,
@@ -6012,6 +8624,17 @@ impl ServiceType {
             other => panic!("unexpected ServiceType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::Seat => crate::asn1_uper::Integer::from_short(0),
+            Self::Couchette => crate::asn1_uper::Integer::from_short(1),
+            Self::Berth => crate::asn1_uper::Integer::from_short(2),
+            Self::Carcarriage => crate::asn1_uper::Integer::from_short(3),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(3) }, &integer_value)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6027,7 +8650,7 @@ pub enum PassengerType {
     FreeAddonChild = 7,
 }
 impl PassengerType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6046,6 +8669,22 @@ impl PassengerType {
         };
         Ok((rest, enum_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        let integer_value = match self {
+            Self::Adult => crate::asn1_uper::Integer::from_short(0),
+            Self::Senior => crate::asn1_uper::Integer::from_short(1),
+            Self::Child => crate::asn1_uper::Integer::from_short(2),
+            Self::Youth => crate::asn1_uper::Integer::from_short(3),
+            Self::Dog => crate::asn1_uper::Integer::from_short(4),
+            Self::Bicycle => crate::asn1_uper::Integer::from_short(5),
+            Self::FreeAddonPassenger => crate::asn1_uper::Integer::from_short(6),
+            Self::FreeAddonChild => crate::asn1_uper::Integer::from_short(7),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(7) }, &integer_value)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -6056,7 +8695,7 @@ pub enum TicketType {
     CarCarriageReservation = 3,
 }
 impl TicketType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6071,6 +8710,18 @@ impl TicketType {
         };
         Ok((rest, enum_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        let integer_value = match self {
+            Self::OpenTicket => crate::asn1_uper::Integer::from_short(0),
+            Self::Pass => crate::asn1_uper::Integer::from_short(1),
+            Self::Reservation => crate::asn1_uper::Integer::from_short(2),
+            Self::CarCarriageReservation => crate::asn1_uper::Integer::from_short(3),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(3) }, &integer_value)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -6079,7 +8730,7 @@ pub enum LinkMode {
     OnlyValidInCombination = 1,
 }
 impl LinkMode {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6092,6 +8743,16 @@ impl LinkMode {
         };
         Ok((rest, enum_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        let integer_value = match self {
+            Self::IssuedTogether => crate::asn1_uper::Integer::from_short(0),
+            Self::OnlyValidInCombination => crate::asn1_uper::Integer::from_short(1),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1) }, &integer_value)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct PlacesType {
@@ -6102,7 +8763,7 @@ pub struct PlacesType {
     pub place_num: Vec<crate::asn1_uper::Integer>,
 }
 impl PlacesType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 5)?;
         let (rest, coach) = if optional_bits[0] {
             let (rest, value) = {
@@ -6179,6 +8840,40 @@ impl PlacesType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.coach.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.place_string.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.place_description.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.place_ia_5.len() > 0);
+        crate::asn1_uper::encode_bool(uper_buf, self.place_num.len() > 0);
+        if let Some(opt_val) = &self.coach {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.place_string {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.place_description {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.place_ia_5.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.place_ia_5.len())?;
+    for item in &self.place_ia_5 {
+        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+    }
+};
+        }
+        if self.place_num.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.place_num.len())?;
+    for item in &self.place_num {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(254) }, &item)?;
+    }
+};
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -6189,7 +8884,7 @@ pub enum PriceTypeType {
     TravelPrice = 3,
 }
 impl PriceTypeType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(3) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::NoPrice,
@@ -6199,6 +8894,17 @@ impl PriceTypeType {
             other => panic!("unexpected PriceTypeType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::NoPrice => crate::asn1_uper::Integer::from_short(0),
+            Self::ReservationFee => crate::asn1_uper::Integer::from_short(1),
+            Self::Supplement => crate::asn1_uper::Integer::from_short(2),
+            Self::TravelPrice => crate::asn1_uper::Integer::from_short(3),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(3) }, &integer_value)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6212,7 +8918,7 @@ pub enum BerthTypeType {
     T4 = 5,
 }
 impl BerthTypeType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(5) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::Single,
@@ -6225,6 +8931,19 @@ impl BerthTypeType {
         };
         Ok((rest, enum_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::Single => crate::asn1_uper::Integer::from_short(0),
+            Self::Special => crate::asn1_uper::Integer::from_short(1),
+            Self::Double => crate::asn1_uper::Integer::from_short(2),
+            Self::T2 => crate::asn1_uper::Integer::from_short(3),
+            Self::T3 => crate::asn1_uper::Integer::from_short(4),
+            Self::T4 => crate::asn1_uper::Integer::from_short(5),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(5) }, &integer_value)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -6236,7 +8955,7 @@ pub enum CompartmentGenderType {
     Mixed = 4,
 }
 impl CompartmentGenderType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6252,6 +8971,19 @@ impl CompartmentGenderType {
         };
         Ok((rest, enum_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        let integer_value = match self {
+            Self::Unspecified => crate::asn1_uper::Integer::from_short(0),
+            Self::Family => crate::asn1_uper::Integer::from_short(1),
+            Self::Female => crate::asn1_uper::Integer::from_short(2),
+            Self::Male => crate::asn1_uper::Integer::from_short(3),
+            Self::Mixed => crate::asn1_uper::Integer::from_short(4),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(4) }, &integer_value)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -6262,7 +8994,7 @@ pub enum GenderType {
     Other = 3,
 }
 impl GenderType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6276,6 +9008,18 @@ impl GenderType {
             other => panic!("unexpected GenderType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        let integer_value = match self {
+            Self::Unspecified => crate::asn1_uper::Integer::from_short(0),
+            Self::Female => crate::asn1_uper::Integer::from_short(1),
+            Self::Male => crate::asn1_uper::Integer::from_short(2),
+            Self::Other => crate::asn1_uper::Integer::from_short(3),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(3) }, &integer_value)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6295,7 +9039,7 @@ pub enum TravelClassType {
     StandardSecond = 11,
 }
 impl TravelClassType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6318,6 +9062,26 @@ impl TravelClassType {
         };
         Ok((rest, enum_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        let integer_value = match self {
+            Self::NotApplicable => crate::asn1_uper::Integer::from_short(0),
+            Self::First => crate::asn1_uper::Integer::from_short(1),
+            Self::Second => crate::asn1_uper::Integer::from_short(2),
+            Self::Tourist => crate::asn1_uper::Integer::from_short(3),
+            Self::Comfort => crate::asn1_uper::Integer::from_short(4),
+            Self::Premium => crate::asn1_uper::Integer::from_short(5),
+            Self::Business => crate::asn1_uper::Integer::from_short(6),
+            Self::All => crate::asn1_uper::Integer::from_short(7),
+            Self::PremiumFirst => crate::asn1_uper::Integer::from_short(8),
+            Self::StandardFirst => crate::asn1_uper::Integer::from_short(9),
+            Self::PremiumSecond => crate::asn1_uper::Integer::from_short(10),
+            Self::StandardSecond => crate::asn1_uper::Integer::from_short(11),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(11) }, &integer_value)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct BerthDetailData {
@@ -6326,7 +9090,7 @@ pub struct BerthDetailData {
     pub gender: CompartmentGenderType,
 }
 impl BerthDetailData {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6347,6 +9111,17 @@ impl BerthDetailData {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.gender != CompartmentGenderType::Family);
+        self.berth_type.write_uper(uper_buf)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(999) }, &self.number_of_berths)?;
+        if self.gender != CompartmentGenderType::Family {
+            self.gender.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct CompartmentDetailsType {
@@ -6359,7 +9134,7 @@ pub struct CompartmentDetailsType {
     pub position: CompartmentPositionType,
 }
 impl CompartmentDetailsType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6430,6 +9205,39 @@ impl CompartmentDetailsType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.coach_type.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.compartment_type.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.special_allocation.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.coach_type_descr.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.compartment_type_descr.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.special_allocation_descr.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.position != CompartmentPositionType::Unspecified);
+        if let Some(opt_val) = &self.coach_type {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(99) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.compartment_type {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(99) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.special_allocation {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(99) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.coach_type_descr {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.compartment_type_descr {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if let Some(opt_val) = &self.special_allocation_descr {
+            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+        }
+        if self.position != CompartmentPositionType::Unspecified {
+            self.position.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct LuggageRestrictionType {
@@ -6438,7 +9246,7 @@ pub struct LuggageRestrictionType {
     pub registered_luggage: Vec<RegisteredLuggageType>,
 }
 impl LuggageRestrictionType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6479,6 +9287,28 @@ impl LuggageRestrictionType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.max_hand_luggage_pieces != crate::asn1_uper::Integer::from_short(3));
+        crate::asn1_uper::encode_bool(uper_buf, self.max_non_hand_luggage_pieces != crate::asn1_uper::Integer::from_short(1));
+        crate::asn1_uper::encode_bool(uper_buf, self.registered_luggage.len() > 0);
+        if self.max_hand_luggage_pieces != crate::asn1_uper::Integer::from_short(3) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(99) }, &self.max_hand_luggage_pieces)?;
+        }
+        if self.max_non_hand_luggage_pieces != crate::asn1_uper::Integer::from_short(1) {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(99) }, &self.max_non_hand_luggage_pieces)?;
+        }
+        if self.registered_luggage.len() > 0 {
+            {
+    crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.registered_luggage.len())?;
+    for item in &self.registered_luggage {
+        item.write_uper(uper_buf)?;
+    }
+};
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct RegisteredLuggageType {
@@ -6487,7 +9317,7 @@ pub struct RegisteredLuggageType {
     pub max_size: Option<crate::asn1_uper::Integer>,
 }
 impl RegisteredLuggageType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6522,6 +9352,23 @@ impl RegisteredLuggageType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        crate::asn1_uper::encode_bool(uper_buf, self.registration_id.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.max_weight.is_some());
+        crate::asn1_uper::encode_bool(uper_buf, self.max_size.is_some());
+        if let Some(opt_val) = &self.registration_id {
+            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.max_weight {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(99) }, &opt_val)?;
+        }
+        if let Some(opt_val) = &self.max_size {
+            crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(300) }, &opt_val)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct GeoCoordinateType {
@@ -6534,7 +9381,7 @@ pub struct GeoCoordinateType {
     pub accuracy: Option<GeoUnitType>,
 }
 impl GeoCoordinateType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 5)?;
         let (rest, geo_unit) = if optional_bits[0] {
             GeoUnitType::try_from_uper(rest)?
@@ -6579,6 +9426,32 @@ impl GeoCoordinateType {
         };
         Ok((rest, sequence))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, self.geo_unit != GeoUnitType::MilliDegree);
+        crate::asn1_uper::encode_bool(uper_buf, self.coordinate_system != GeoCoordinateSystemType::Wgs84);
+        crate::asn1_uper::encode_bool(uper_buf, self.hemisphere_longitude != HemisphereLongitudeType::North);
+        crate::asn1_uper::encode_bool(uper_buf, self.hemisphere_latitude != HemisphereLatitudeType::East);
+        crate::asn1_uper::encode_bool(uper_buf, self.accuracy.is_some());
+        if self.geo_unit != GeoUnitType::MilliDegree {
+            self.geo_unit.write_uper(uper_buf)?;
+        }
+        if self.coordinate_system != GeoCoordinateSystemType::Wgs84 {
+            self.coordinate_system.write_uper(uper_buf)?;
+        }
+        if self.hemisphere_longitude != HemisphereLongitudeType::North {
+            self.hemisphere_longitude.write_uper(uper_buf)?;
+        }
+        if self.hemisphere_latitude != HemisphereLatitudeType::East {
+            self.hemisphere_latitude.write_uper(uper_buf)?;
+        }
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.longitude)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.latitude)?;
+        if let Some(opt_val) = &self.accuracy {
+            opt_val.write_uper(uper_buf)?;
+        }
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct DeltaCoordinates {
@@ -6586,7 +9459,7 @@ pub struct DeltaCoordinates {
     pub latitude: crate::asn1_uper::Integer,
 }
 impl DeltaCoordinates {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, longitude) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
         let (rest, latitude) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
         let sequence = Self {
@@ -6594,6 +9467,12 @@ impl DeltaCoordinates {
             latitude,
         };
         Ok((rest, sequence))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.longitude)?;
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.latitude)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6603,7 +9482,7 @@ pub enum GeoCoordinateSystemType {
     Grs80 = 1,
 }
 impl GeoCoordinateSystemType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::Wgs84,
@@ -6611,6 +9490,15 @@ impl GeoCoordinateSystemType {
             other => panic!("unexpected GeoCoordinateSystemType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::Wgs84 => crate::asn1_uper::Integer::from_short(0),
+            Self::Grs80 => crate::asn1_uper::Integer::from_short(1),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1) }, &integer_value)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6623,7 +9511,7 @@ pub enum GeoUnitType {
     DeciDegree = 4,
 }
 impl GeoUnitType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(4) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::MicroDegree,
@@ -6635,6 +9523,18 @@ impl GeoUnitType {
         };
         Ok((rest, enum_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::MicroDegree => crate::asn1_uper::Integer::from_short(0),
+            Self::TenthmilliDegree => crate::asn1_uper::Integer::from_short(1),
+            Self::MilliDegree => crate::asn1_uper::Integer::from_short(2),
+            Self::CentiDegree => crate::asn1_uper::Integer::from_short(3),
+            Self::DeciDegree => crate::asn1_uper::Integer::from_short(4),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(4) }, &integer_value)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -6643,7 +9543,7 @@ pub enum HemisphereLongitudeType {
     South = 1,
 }
 impl HemisphereLongitudeType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::North,
@@ -6651,6 +9551,15 @@ impl HemisphereLongitudeType {
             other => panic!("unexpected HemisphereLongitudeType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::North => crate::asn1_uper::Integer::from_short(0),
+            Self::South => crate::asn1_uper::Integer::from_short(1),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1) }, &integer_value)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6660,7 +9569,7 @@ pub enum HemisphereLatitudeType {
     West = 1,
 }
 impl HemisphereLatitudeType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::East,
@@ -6668,6 +9577,15 @@ impl HemisphereLatitudeType {
             other => panic!("unexpected HemisphereLatitudeType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::East => crate::asn1_uper::Integer::from_short(0),
+            Self::West => crate::asn1_uper::Integer::from_short(1),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1) }, &integer_value)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6678,7 +9596,7 @@ pub enum LoadingDeckType {
     Lower = 2,
 }
 impl LoadingDeckType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(2) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::Unspecified,
@@ -6687,6 +9605,16 @@ impl LoadingDeckType {
             other => panic!("unexpected LoadingDeckType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::Unspecified => crate::asn1_uper::Integer::from_short(0),
+            Self::Upper => crate::asn1_uper::Integer::from_short(1),
+            Self::Lower => crate::asn1_uper::Integer::from_short(2),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(2) }, &integer_value)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6697,7 +9625,7 @@ pub enum CompartmentPositionType {
     LowerLevel = 2,
 }
 impl CompartmentPositionType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, value_index) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(2) })?;
         let enum_value = match value_index.try_to_usize().expect("failed to decode enumerated value to usize") {
             0 => Self::Unspecified,
@@ -6706,6 +9634,16 @@ impl CompartmentPositionType {
             other => panic!("unexpected CompartmentPositionType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        let integer_value = match self {
+            Self::Unspecified => crate::asn1_uper::Integer::from_short(0),
+            Self::UpperLevel => crate::asn1_uper::Integer::from_short(1),
+            Self::LowerLevel => crate::asn1_uper::Integer::from_short(2),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(2) }, &integer_value)?;
+        Ok(())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -6722,7 +9660,7 @@ pub enum RoofRackType {
     OtherRack = 8,
 }
 impl RoofRackType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6742,6 +9680,23 @@ impl RoofRackType {
         };
         Ok((rest, enum_value))
     }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        let integer_value = match self {
+            Self::Norack => crate::asn1_uper::Integer::from_short(0),
+            Self::RoofRailing => crate::asn1_uper::Integer::from_short(1),
+            Self::LuggageRack => crate::asn1_uper::Integer::from_short(2),
+            Self::SkiRack => crate::asn1_uper::Integer::from_short(3),
+            Self::BoxRack => crate::asn1_uper::Integer::from_short(4),
+            Self::RackWithOneBox => crate::asn1_uper::Integer::from_short(5),
+            Self::RackWithTwoBoxes => crate::asn1_uper::Integer::from_short(6),
+            Self::BicycleRack => crate::asn1_uper::Integer::from_short(7),
+            Self::OtherRack => crate::asn1_uper::Integer::from_short(8),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(8) }, &integer_value)?;
+        Ok(())
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(u8)]
@@ -6750,7 +9705,7 @@ pub enum BoardingOrArrivalRestrictionType {
     Arrival = 1,
 }
 impl BoardingOrArrivalRestrictionType {
-    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::Error<'a>>> {
+    pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, is_extended) = crate::asn1_uper::decode_bool(rest)?;
         if is_extended {
             panic!("cannot currently handle extensibility");
@@ -6762,5 +9717,15 @@ impl BoardingOrArrivalRestrictionType {
             other => panic!("unexpected BoardingOrArrivalRestrictionType value {}", other),
         };
         Ok((rest, enum_value))
+    }
+
+    pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
+        crate::asn1_uper::encode_bool(uper_buf, false);
+        let integer_value = match self {
+            Self::Boarding => crate::asn1_uper::Integer::from_short(0),
+            Self::Arrival => crate::asn1_uper::Integer::from_short(1),
+        };
+        crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1) }, &integer_value)?;
+        Ok(())
     }
 }

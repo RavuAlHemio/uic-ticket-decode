@@ -1,0 +1,18 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cppvsdbg",
+            "request": "launch",
+            "name": "run uic-ticket-decode",
+            "program": "C:\\Development\\uic-ticket-decode-devel\\target\\debug\\uic-ticket-decode.exe",
+            "args": ["data", "klimaticket-physical-2023.bin", "-r", "ktphys2023-reencoded.bin"],
+            "cwd": "C:\\Development\\uic-ticket-decode-devel",
+            "sourceFileMap": {},
+            "env": {}
+        }
+    ]
+}
