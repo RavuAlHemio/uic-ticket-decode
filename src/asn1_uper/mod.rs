@@ -769,7 +769,7 @@ pub fn to_bytes_msb_first(bits: &[bool]) -> Vec<u8> {
             bit_index += 1;
         }
     }
-    if bit_index != 7 {
+    if bit_index != 0 {
         ret.push(bit_assembly);
     }
     ret
