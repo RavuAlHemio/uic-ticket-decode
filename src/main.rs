@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 
 use clap::Parser;
 use flate2;
+use rand::Rng as _;
 use rxing;
 
 use crate::asn1_uper::{to_bits_msb_first, to_bytes_msb_first};
@@ -19,6 +20,7 @@ use crate::uflex_3_ext::output_ticket_validity;
 enum ProgMode {
     Barcode(BarcodeArgs),
     Data(DataArgs),
+    Encode(EncodeArgs),
 }
 
 #[derive(Parser)]
@@ -34,12 +36,103 @@ struct DataArgs {
     pub re_encode_path: Option<PathBuf>,
 }
 
+#[derive(Parser)]
+struct EncodeArgs {
+    pub json_path: PathBuf,
+    pub output_path: PathBuf,
+
+    #[arg(default_value = "6969")]
+    pub signer_number: String,
+
+    #[arg(default_value = "66666")]
+    pub key_id: String,
+}
+
 
 fn hexdump(bs: &[u8]) {
     for b in bs {
         print!(" {:02X}", b);
     }
     println!();
+}
+
+
+fn encode(encode_args: EncodeArgs) {
+    if encode_args.signer_number.len() != 4 {
+        panic!("signer number {:?} is not 4 bytes long", encode_args.signer_number);
+    }
+    if encode_args.key_id.len() != 5 {
+        panic!("key ID {:?} is not 4 bytes long", encode_args.key_id);
+    }
+
+    // outer structure:
+    // "#UT02"
+    // 4 bytes signer number
+    // 5 bytes key ID
+    // 32 bytes DSA signature r
+    // 32 bytes DSA signature s
+    // 4 bytes textual representation of compressed length
+    // rest compressed data: ZLIB(inner structure)
+
+    // inner structure:
+    // loop start
+    // 6 bytes record ID ("U_FLEX")
+    // 2 bytes version ("03")
+    // 4 bytes textual representation of record length
+    // rest record data
+    // loop end
+
+    // record data: unaligned PER encoding of UicRailTicketData structure
+
+    // deserialize UicRailTicketData from JSON
+    let json_string = std::fs::read_to_string(&encode_args.json_path)
+        .expect("failed to read JSON file");
+    let ticket_data: crate::uflex_3::UicRailTicketData = serde_json::from_str(&json_string)
+        .expect("failed to deserialize JSON");
+
+    // serialize UicRailTicketData to bytes
+    let mut uper_bits = Vec::new();
+    ticket_data.write_uper(&mut uper_bits)
+        .expect("failed to serialize ticket bits");
+    let uper_bytes = to_bytes_msb_first(&uper_bits);
+    let uper_length = 6 + 2 + 4 + uper_bytes.len();
+    let uper_length_text = format!("{:04}", uper_length);
+    if uper_length_text.len() != 4 {
+        panic!("record length as text does not fit into four bytes");
+    }
+    let mut full_flex: Vec<u8> = Vec::with_capacity(uper_length);
+    full_flex.extend(b"U_FLEX03");
+    full_flex.extend(uper_length_text.as_bytes());
+    full_flex.extend(&uper_bytes);
+
+    // zlib-compress
+    let mut compressed_bytes = Vec::new();
+    flate2::read::ZlibEncoder::new(Cursor::new(&full_flex), flate2::Compression::best())
+        .read_to_end(&mut compressed_bytes)
+        .expect("failed to compress data");
+    let compressed_length_text = format!("{:04}", compressed_bytes.len());
+    if compressed_length_text.len() != 4 {
+        panic!("compressed data length as text does not fit into four bytes");
+    }
+
+    // embed in outer structure
+    let mut outer_bytes = Vec::new();
+    outer_bytes.extend(b"#UT02");
+    outer_bytes.extend(encode_args.signer_number.as_bytes());
+    outer_bytes.extend(encode_args.key_id.as_bytes());
+
+    let mut dsa_r = [0u8; 32];
+    let mut dsa_s = [0u8; 32];
+    rand::thread_rng().fill(&mut dsa_r);
+    rand::thread_rng().fill(&mut dsa_s);
+    outer_bytes.extend(&dsa_r);
+    outer_bytes.extend(&dsa_s);
+    outer_bytes.extend(compressed_length_text.as_bytes());
+    outer_bytes.extend(&compressed_bytes);
+
+    // write out
+    std::fs::write(&encode_args.output_path, &outer_bytes)
+        .expect("failed to write output");
 }
 
 
@@ -58,6 +151,10 @@ fn main() {
             let data = std::fs::read(&data_args.data_path)
                 .expect("failed to read barcode data");
             (data, data_args.re_encode_path)
+        },
+        ProgMode::Encode(encode_args) => {
+            encode(encode_args);
+            return;
         },
     };
 
@@ -183,11 +280,6 @@ fn decode_record_uflex_3(record_data: &[u8], re_encode_path: Option<&Path>) {
 
     // convert record data to bits
     let record_data_bits = to_bits_msb_first(record_data);
-    println!("record data bit dump:");
-    for &bit in &record_data_bits {
-        print!("{}", if bit { '1' } else { '0' });
-    }
-    println!();
 
     // the top structure is UicRailTicketData
     let (_rest, uic_rail_ticket_data) = crate::uflex_3::UicRailTicketData::try_from_uper(&record_data_bits)
@@ -202,12 +294,6 @@ fn decode_record_uflex_3(record_data: &[u8], re_encode_path: Option<&Path>) {
         let mut buf = Vec::new();
         uic_rail_ticket_data.write_uper(&mut buf)
             .expect("failed to re-encode UicRailTicketData");
-
-        println!("reencoded data bit dump:");
-        for &bit in &buf {
-            print!("{}", if bit { '1' } else { '0' });
-        }
-        println!();
 
         let bytes = to_bytes_msb_first(&buf);
         std::fs::write(path, &bytes)
