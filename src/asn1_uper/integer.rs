@@ -11,6 +11,8 @@ use std::ops::{
 
 use num_bigint::{BigInt, TryFromBigIntError};
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::Error as _;
 
 
 pub type ShortInt = i128;
@@ -104,6 +106,19 @@ impl fmt::Display for Integer {
             IntegerInner::Short(s) => write!(f, "{}", s),
             IntegerInner::Long(l) => write!(f, "{}", l),
         }
+    }
+}
+impl Serialize for Integer {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let as_string = self.to_string();
+        as_string.serialize(serializer)
+    }
+}
+impl<'de> Deserialize<'de> for Integer {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let string = String::deserialize(deserializer)?;
+        let long_int: BigInt = string.parse().map_err(|e| D::Error::custom(e))?;
+        Ok(Self::from_long(long_int))
     }
 }
 
