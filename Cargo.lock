@@ -1350,6 +1350,7 @@ dependencies = [
  "nom",
  "num-bigint",
  "once_cell",
+ "png",
  "rand 0.8.5",
  "rxing",
  "serde",

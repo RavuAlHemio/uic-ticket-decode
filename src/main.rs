@@ -1,16 +1,18 @@
 mod asn1_uper;
+mod pngify;
 mod uflex_3;
 mod uflex_3_ext;
 mod utlay_painter;
 
 
-use std::io::{Cursor, Read};
+use std::fs::File;
+use std::io::{Cursor, Read, BufWriter};
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
 use flate2;
 use rand::Rng as _;
-use rxing;
+use rxing::Writer as _;
 
 use crate::asn1_uper::{to_bits_msb_first, to_bytes_msb_first};
 use crate::uflex_3_ext::output_ticket_validity;
@@ -40,6 +42,9 @@ struct DataArgs {
 struct EncodeArgs {
     pub json_path: PathBuf,
     pub output_path: PathBuf,
+
+    #[arg(short, long)]
+    pub png: bool,
 
     #[arg(default_value = "6969")]
     pub signer_number: String,
@@ -116,7 +121,7 @@ fn encode(encode_args: EncodeArgs) {
     }
 
     // embed in outer structure
-    let mut outer_bytes = Vec::new();
+    let mut outer_bytes: Vec<u8> = Vec::new();
     outer_bytes.extend(b"#UT02");
     outer_bytes.extend(encode_args.signer_number.as_bytes());
     outer_bytes.extend(encode_args.key_id.as_bytes());
@@ -130,9 +135,31 @@ fn encode(encode_args: EncodeArgs) {
     outer_bytes.extend(compressed_length_text.as_bytes());
     outer_bytes.extend(&compressed_bytes);
 
-    // write out
-    std::fs::write(&encode_args.output_path, &outer_bytes)
-        .expect("failed to write output");
+    if encode_args.png {
+        // convert bytes to pseudo-textual string by pretending it's ISO-8859-1
+        let mut outer_string = String::new();
+        for &b in &outer_bytes {
+            let c = char::from_u32(b.into()).unwrap();
+            outer_string.push(c);
+        }
+
+        // encode as Aztec
+        let aztec_barcode = rxing::aztec::AztecWriter.encode(
+            &outer_string,
+            &rxing::BarcodeFormat::AZTEC,
+            0, 0,
+        ).expect("failed to encode as Aztec");
+
+        // write out as PNG
+        let f = File::create(&encode_args.output_path)
+            .expect("failed to create output");
+        let bufw = BufWriter::new(f);
+        pngify::write_bit_matrix_as_png(bufw, &aztec_barcode, 5);
+    } else {
+    // write out data
+        std::fs::write(&encode_args.output_path, &outer_bytes)
+            .expect("failed to write output");
+    }
 }
 
 
