@@ -154,7 +154,7 @@ fn encode(encode_args: EncodeArgs) {
         let f = File::create(&encode_args.output_path)
             .expect("failed to create output");
         let bufw = BufWriter::new(f);
-        pngify::write_bit_matrix_as_png(bufw, &aztec_barcode, 5);
+        pngify::write_bit_matrix_as_png(bufw, &aztec_barcode, 5, 25);
     } else {
     // write out data
         std::fs::write(&encode_args.output_path, &outer_bytes)
