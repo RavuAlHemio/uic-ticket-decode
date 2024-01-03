@@ -339,15 +339,13 @@ def rust_deserialize_call(member: Union[dict[str, Any], str], parent_type: Optio
     elif type_name == "UTF8String":
         lines = ["{"]
         lines.append("    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;")
-        lines.append('    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");')
-        lines.append("    (rest, utf8_string)")
+        lines.append("    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?")
         lines.append("}")
         return "\n".join(lines)
     elif type_name == "IA5String":
         lines = ["{"]
         lines.append("    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;")
-        lines.append('    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");')
-        lines.append("    (rest, utf8_string)")
+        lines.append("    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?")
         lines.append("}")
         return "\n".join(lines)
     elif type_name == "SEQUENCE OF":

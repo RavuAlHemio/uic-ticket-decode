@@ -95,6 +95,10 @@ pub enum ErrorKind {
     /// Failed to convert a length value to usize.
     #[non_exhaustive]
     LengthValueNotUsize { value: Integer },
+
+    /// The string is not valid UTF-8.
+    #[non_exhaustive]
+    InvalidUtf8String { bytes: Vec<u8> },
 }
 impl fmt::Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -105,6 +109,8 @@ impl fmt::Display for ErrorKind {
                 => write!(f, "invalid huge-length value {}", value),
             Self::LengthValueNotUsize { value }
                 => write!(f, "failed to convert length value {} to usize", value),
+            Self::InvalidUtf8String { bytes }
+                => write!(f, "byte string is not valid UTF-8: {:?}", bytes),
         }
     }
 }
@@ -790,6 +796,15 @@ fn bits_to_bytes(bits: &[bool], bits_per_byte: usize) -> Vec<u8> {
         ret.push(byte);
     }
     ret
+}
+
+/// Attempts to convert an octet string into a UTF-8 string.
+pub fn octet_string_to_utf8<'a>(rest: &'a [bool], octet_string: Vec<u8>) -> ParseResult<'a, String> {
+    let utf8_string = String::from_utf8(octet_string)
+        .map_err(|e| nom::Err::Error(
+            DecodingError::new(rest, ErrorKind::InvalidUtf8String { bytes: e.into_bytes() })
+        ))?;
+    Ok((rest, utf8_string))
 }
 
 
