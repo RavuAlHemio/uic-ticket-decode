@@ -670,8 +670,8 @@ fn encode_unconstrained_int(uper_buf: &mut Vec<bool>, value: &Integer) -> Result
 /// Decodes an octet string.
 ///
 /// The encoding is specified in X.691 § 17.
-pub fn decode_octet_string<'a>(bits: &'a [bool]) -> ParseResult<'a, Vec<u8>> {
-    let (rest, length_integer) = decode_length(bits, &WholeNumberConstraint::Unconstrained)?;
+pub fn decode_octet_string<'a>(bits: &'a [bool], length_constraint: &WholeNumberConstraint) -> ParseResult<'a, Vec<u8>> {
+    let (rest, length_integer) = decode_length(bits, length_constraint)?;
     let length_bytes: usize = length_integer.try_to_usize()
         .ok_or_else(|| nom::Err::Error(DecodingError::new(rest, ErrorKind::LengthValueNotUsize { value: length_integer })))?;
     let length_bits = 8 * length_bytes;
@@ -683,9 +683,9 @@ pub fn decode_octet_string<'a>(bits: &'a [bool]) -> ParseResult<'a, Vec<u8>> {
 /// Decodes an IA5 string.
 ///
 /// The encoding is specified in X.691 § 17 in conjunction with § 30.5.3.
-pub fn decode_ia5_string<'a>(bits: &'a [bool]) -> ParseResult<'a, Vec<u8>> {
+pub fn decode_ia5_string<'a>(bits: &'a [bool], length_constraint: &WholeNumberConstraint) -> ParseResult<'a, Vec<u8>> {
     // each IA5String character fits in 7 bytes
-    let (rest, length_integer) = decode_length(bits, &WholeNumberConstraint::Unconstrained)?;
+    let (rest, length_integer) = decode_length(bits, length_constraint)?;
     let length_bytes: usize = length_integer.try_to_usize()
         .ok_or_else(|| nom::Err::Error(DecodingError::new(rest, ErrorKind::LengthValueNotUsize { value: length_integer })))?;
     let length_bits = 7 * length_bytes;
@@ -698,8 +698,8 @@ pub fn decode_ia5_string<'a>(bits: &'a [bool]) -> ParseResult<'a, Vec<u8>> {
 /// 
 /// The encoding is specified in X.691 § 17.
 #[must_use]
-pub fn encode_octet_string(uper_buf: &mut Vec<bool>, value: &[u8]) -> Result<(), EncodingError> {
-    encode_length(uper_buf, &WholeNumberConstraint::Unconstrained, value.len())?;
+pub fn encode_octet_string(uper_buf: &mut Vec<bool>, length_constraint: &WholeNumberConstraint, value: &[u8]) -> Result<(), EncodingError> {
+    encode_length(uper_buf, length_constraint, value.len())?;
     for b in value {
         // for 7, 6, 5, 4, 3, 2, 1, 0
         for i in (0..8).rev() {
@@ -714,8 +714,8 @@ pub fn encode_octet_string(uper_buf: &mut Vec<bool>, value: &[u8]) -> Result<(),
 /// 
 /// The encoding is specified in X.691 § 17 in conjunction with § 30.5.3.
 #[must_use]
-pub fn encode_ia5_string(uper_buf: &mut Vec<bool>, value: &str) -> Result<(), EncodingError> {
-    encode_length(uper_buf, &WholeNumberConstraint::Unconstrained, value.len())?;
+pub fn encode_ia5_string(uper_buf: &mut Vec<bool>, length_constraint: &WholeNumberConstraint, value: &str) -> Result<(), EncodingError> {
+    encode_length(uper_buf, length_constraint, value.len())?;
     for (byte_index, b) in value.bytes().enumerate() {
         // top bit must not be set
         if b & 0b1000_0000 != 0 {

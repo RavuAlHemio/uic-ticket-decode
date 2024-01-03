@@ -326,9 +326,8 @@ impl DelayConfirmation {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 15)?;
         let (rest, reference_ia_5) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -348,9 +347,8 @@ impl DelayConfirmation {
         };
         let (rest, train_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -394,9 +392,8 @@ impl DelayConfirmation {
         };
         let (rest, station_ia_5) = if optional_bits[10] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -428,9 +425,8 @@ impl DelayConfirmation {
         };
         let (rest, info_text) = if optional_bits[13] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -482,7 +478,7 @@ impl DelayConfirmation {
         crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
         crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -491,7 +487,7 @@ impl DelayConfirmation {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.train_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.departure_year {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2016), max: crate::asn1_uper::Integer::from_short(2269) }, &opt_val)?;
@@ -512,7 +508,7 @@ impl DelayConfirmation {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(999) }, &self.delay)?;
         crate::asn1_uper::encode_bool(uper_buf, self.train_cancelled);
@@ -528,7 +524,7 @@ impl DelayConfirmation {
 };
         }
         if let Some(opt_val) = &self.info_text {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.extension {
             opt_val.write_uper(uper_buf)?;
@@ -607,9 +603,8 @@ impl IssuingData {
         };
         let (rest, security_provider_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -623,9 +618,8 @@ impl IssuingData {
         };
         let (rest, issuer_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -636,9 +630,8 @@ impl IssuingData {
         let (rest, issuing_time) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) })?;
         let (rest, issuer_name) = if optional_bits[4] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -649,9 +642,8 @@ impl IssuingData {
         let (rest, activated) = crate::asn1_uper::decode_bool(rest)?;
         let (rest, currency) = if optional_bits[5] {
             {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(3), max: crate::asn1_uper::Integer::from_short(3) })?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 }
         } else {
             let default_value = "EUR".to_owned();
@@ -665,9 +657,8 @@ impl IssuingData {
         };
         let (rest, issuer_pnr) = if optional_bits[7] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -687,9 +678,8 @@ impl IssuingData {
         };
         let (rest, issued_on_train_ia_5) = if optional_bits[10] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -750,31 +740,31 @@ impl IssuingData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.security_provider_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.issuer_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.issuer_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2016), max: crate::asn1_uper::Integer::from_short(2269) }, &self.issuing_year)?;
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(366) }, &self.issuing_day)?;
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &self.issuing_time)?;
         if let Some(opt_val) = &self.issuer_name {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         crate::asn1_uper::encode_bool(uper_buf, self.specimen);
         crate::asn1_uper::encode_bool(uper_buf, self.secure_paper_ticket);
         crate::asn1_uper::encode_bool(uper_buf, self.activated);
         if self.currency != "EUR".to_owned() {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &self.currency)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(3), max: crate::asn1_uper::Integer::from_short(3) }, &self.currency)?;
         }
         if self.currency_fract != crate::asn1_uper::Integer::from_short(2) {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(3) }, &self.currency_fract)?;
         }
         if let Some(opt_val) = &self.issuer_pnr {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.extension {
             opt_val.write_uper(uper_buf)?;
@@ -783,7 +773,7 @@ impl IssuingData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.issued_on_train_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.issued_on_line {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -852,9 +842,8 @@ impl ControlData {
         let (rest, reduction_card_check_required) = crate::asn1_uper::decode_bool(rest)?;
         let (rest, info_text) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -928,7 +917,7 @@ impl ControlData {
         crate::asn1_uper::encode_bool(uper_buf, self.age_check_required);
         crate::asn1_uper::encode_bool(uper_buf, self.reduction_card_check_required);
         if let Some(opt_val) = &self.info_text {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.included_tickets.len() > 0 {
             {
@@ -975,9 +964,8 @@ impl TravelerData {
         };
         let (rest, preferred_language) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2), max: crate::asn1_uper::Integer::from_short(2) })?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -985,9 +973,8 @@ impl TravelerData {
         };
         let (rest, group_name) = if optional_bits[2] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1015,10 +1002,10 @@ impl TravelerData {
 };
         }
         if let Some(opt_val) = &self.preferred_language {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2), max: crate::asn1_uper::Integer::from_short(2) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.group_name {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         Ok(())
     }
@@ -1085,9 +1072,8 @@ impl ReservationData {
         };
         let (rest, train_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1101,9 +1087,8 @@ impl ReservationData {
         };
         let (rest, reference_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1123,9 +1108,8 @@ impl ReservationData {
         };
         let (rest, product_owner_ia_5) = if optional_bits[6] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1139,9 +1123,8 @@ impl ReservationData {
         };
         let (rest, product_id_ia_5) = if optional_bits[8] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1155,9 +1138,8 @@ impl ReservationData {
         };
         let (rest, service_brand_abr_utf_8) = if optional_bits[10] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1165,9 +1147,8 @@ impl ReservationData {
         };
         let (rest, service_brand_name_utf_8) = if optional_bits[11] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1193,9 +1174,8 @@ impl ReservationData {
         };
         let (rest, from_station_ia_5) = if optional_bits[15] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1209,9 +1189,8 @@ impl ReservationData {
         };
         let (rest, to_station_ia_5) = if optional_bits[17] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1219,9 +1198,8 @@ impl ReservationData {
         };
         let (rest, from_station_name_utf_8) = if optional_bits[18] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1229,9 +1207,8 @@ impl ReservationData {
         };
         let (rest, to_station_name_utf_8) = if optional_bits[19] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1286,9 +1263,8 @@ impl ReservationData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -1306,9 +1282,8 @@ impl ReservationData {
         };
         let (rest, service_level) = if optional_bits[27] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(2) })?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1424,9 +1399,8 @@ impl ReservationData {
         };
         let (rest, info_text) = if optional_bits[41] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1536,13 +1510,13 @@ impl ReservationData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.train_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if self.departure_date != crate::asn1_uper::Integer::from_short(0) {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.departure_date)?;
         }
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -1551,22 +1525,22 @@ impl ReservationData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.service_brand {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.service_brand_abr_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.service_brand_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.service != ServiceType::Seat {
             self.service.write_uper(uper_buf)?;
@@ -1578,19 +1552,19 @@ impl ReservationData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.to_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &self.departure_time)?;
         if let Some(opt_val) = &self.departure_utc_offset {
@@ -1617,7 +1591,7 @@ impl ReservationData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
     for item in &self.carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -1625,7 +1599,7 @@ impl ReservationData {
             self.class_code.write_uper(uper_buf)?;
         }
         if let Some(opt_val) = &self.service_level {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(2) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.places {
             opt_val.write_uper(uper_buf)?;
@@ -1682,7 +1656,7 @@ impl ReservationData {
             opt_val.write_uper(uper_buf)?;
         }
         if let Some(opt_val) = &self.info_text {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.extension {
             opt_val.write_uper(uper_buf)?;
@@ -1710,9 +1684,8 @@ impl VatDetailType {
         };
         let (rest, vat_id) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1736,7 +1709,7 @@ impl VatDetailType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.vat_id {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         Ok(())
     }
@@ -1804,9 +1777,8 @@ impl CarCarriageReservationData {
         };
         let (rest, train_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1838,9 +1810,8 @@ impl CarCarriageReservationData {
         };
         let (rest, reference_ia_5) = if optional_bits[6] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1860,9 +1831,8 @@ impl CarCarriageReservationData {
         };
         let (rest, product_owner_ia_5) = if optional_bits[9] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1876,9 +1846,8 @@ impl CarCarriageReservationData {
         };
         let (rest, product_id_ia_5) = if optional_bits[11] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1892,9 +1861,8 @@ impl CarCarriageReservationData {
         };
         let (rest, service_brand_abr_utf_8) = if optional_bits[13] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1902,9 +1870,8 @@ impl CarCarriageReservationData {
         };
         let (rest, service_brand_name_utf_8) = if optional_bits[14] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1924,9 +1891,8 @@ impl CarCarriageReservationData {
         };
         let (rest, from_station_ia_5) = if optional_bits[17] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1940,9 +1906,8 @@ impl CarCarriageReservationData {
         };
         let (rest, to_station_ia_5) = if optional_bits[19] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1950,9 +1915,8 @@ impl CarCarriageReservationData {
         };
         let (rest, from_station_name_utf_8) = if optional_bits[20] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1960,9 +1924,8 @@ impl CarCarriageReservationData {
         };
         let (rest, to_station_name_utf_8) = if optional_bits[21] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1970,9 +1933,8 @@ impl CarCarriageReservationData {
         };
         let (rest, coach) = if optional_bits[22] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1980,9 +1942,8 @@ impl CarCarriageReservationData {
         };
         let (rest, place) = if optional_bits[23] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -1995,15 +1956,13 @@ impl CarCarriageReservationData {
             (rest, None)
         };
         let (rest, number_plate) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         let (rest, trailer_plate) = if optional_bits[25] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2083,9 +2042,8 @@ impl CarCarriageReservationData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -2126,9 +2084,8 @@ impl CarCarriageReservationData {
         };
         let (rest, info_text) = if optional_bits[39] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2237,7 +2194,7 @@ impl CarCarriageReservationData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.train_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if self.begin_loading_date != crate::asn1_uper::Integer::from_short(0) {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.begin_loading_date)?;
@@ -2252,7 +2209,7 @@ impl CarCarriageReservationData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-60), max: crate::asn1_uper::Integer::from_short(60) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -2261,22 +2218,22 @@ impl CarCarriageReservationData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.service_brand {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.service_brand_abr_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.service_brand_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.station_code_table != CodeTableType::StationUicReservation {
             self.station_code_table.write_uper(uper_buf)?;
@@ -2285,32 +2242,32 @@ impl CarCarriageReservationData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.to_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.coach {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.place {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.compartment_details {
             opt_val.write_uper(uper_buf)?;
         }
-        crate::asn1_uper::encode_ia5_string(uper_buf, &self.number_plate)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.number_plate)?;
         if let Some(opt_val) = &self.trailer_plate {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(9) }, &self.car_category)?;
         if let Some(opt_val) = &self.boat_category {
@@ -2350,7 +2307,7 @@ impl CarCarriageReservationData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
     for item in &self.carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -2370,7 +2327,7 @@ impl CarCarriageReservationData {
 };
         }
         if let Some(opt_val) = &self.info_text {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.extension {
             opt_val.write_uper(uper_buf)?;
@@ -2437,9 +2394,8 @@ impl OpenTicketData {
         };
         let (rest, reference_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2453,9 +2409,8 @@ impl OpenTicketData {
         };
         let (rest, product_owner_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2469,9 +2424,8 @@ impl OpenTicketData {
         };
         let (rest, product_id_ia_5) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2504,9 +2458,8 @@ impl OpenTicketData {
         };
         let (rest, from_station_ia_5) = if optional_bits[10] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2520,9 +2473,8 @@ impl OpenTicketData {
         };
         let (rest, to_station_ia_5) = if optional_bits[12] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2530,9 +2482,8 @@ impl OpenTicketData {
         };
         let (rest, from_station_name_utf_8) = if optional_bits[13] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2540,9 +2491,8 @@ impl OpenTicketData {
         };
         let (rest, to_station_name_utf_8) = if optional_bits[14] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2550,9 +2500,8 @@ impl OpenTicketData {
         };
         let (rest, valid_region_desc) = if optional_bits[15] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2640,9 +2589,8 @@ impl OpenTicketData {
         };
         let (rest, service_level) = if optional_bits[26] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(2) })?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2672,9 +2620,8 @@ impl OpenTicketData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -2756,9 +2703,8 @@ impl OpenTicketData {
         };
         let (rest, info_text) = if optional_bits[34] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -2916,19 +2862,19 @@ impl OpenTicketData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.ext_issuer_id {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -2944,22 +2890,22 @@ impl OpenTicketData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.to_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.valid_region_desc {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.valid_region.len() > 0 {
             {
@@ -3002,7 +2948,7 @@ impl OpenTicketData {
             self.class_code.write_uper(uper_buf)?;
         }
         if let Some(opt_val) = &self.service_level {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(2) }, &opt_val)?;
         }
         if self.carrier_num.len() > 0 {
             {
@@ -3016,7 +2962,7 @@ impl OpenTicketData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
     for item in &self.carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -3056,7 +3002,7 @@ impl OpenTicketData {
 };
         }
         if let Some(opt_val) = &self.info_text {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.included_add_ons.len() > 0 {
             {
@@ -3143,9 +3089,8 @@ impl PassData {
         };
         let (rest, reference_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -3159,9 +3104,8 @@ impl PassData {
         };
         let (rest, product_owner_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -3175,9 +3119,8 @@ impl PassData {
         };
         let (rest, product_id_ia_5) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -3191,9 +3134,8 @@ impl PassData {
         };
         let (rest, pass_description) = if optional_bits[7] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -3327,9 +3269,8 @@ impl PassData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -3363,9 +3304,8 @@ impl PassData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -3463,9 +3403,8 @@ impl PassData {
         };
         let (rest, info_text) = if optional_bits[32] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -3556,25 +3495,25 @@ impl PassData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.pass_type {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(250) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.pass_description {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.class_code != TravelClassType::Second {
             self.class_code.write_uper(uper_buf)?;
@@ -3640,7 +3579,7 @@ impl PassData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_carrier_ia_5.len())?;
     for item in &self.included_carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -3656,7 +3595,7 @@ impl PassData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_carrier_ia_5.len())?;
     for item in &self.excluded_carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -3704,7 +3643,7 @@ impl PassData {
 };
         }
         if let Some(opt_val) = &self.info_text {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.extension {
             opt_val.write_uper(uper_buf)?;
@@ -3795,9 +3734,8 @@ impl TrainValidityType {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -3831,9 +3769,8 @@ impl TrainValidityType {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -3944,7 +3881,7 @@ impl TrainValidityType {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.included_carrier_ia_5.len())?;
     for item in &self.included_carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -3960,7 +3897,7 @@ impl TrainValidityType {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.excluded_carrier_ia_5.len())?;
     for item in &self.excluded_carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -4190,9 +4127,8 @@ impl VoucherData {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 10)?;
         let (rest, reference_ia_5) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4212,9 +4148,8 @@ impl VoucherData {
         };
         let (rest, product_owner_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4228,9 +4163,8 @@ impl VoucherData {
         };
         let (rest, product_id_ia_5) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4254,9 +4188,8 @@ impl VoucherData {
         };
         let (rest, info_text) = if optional_bits[8] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4300,7 +4233,7 @@ impl VoucherData {
         crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
         crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -4309,13 +4242,13 @@ impl VoucherData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(2016), max: crate::asn1_uper::Integer::from_short(2269) }, &self.valid_from_year)?;
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &self.valid_from_day)?;
@@ -4328,7 +4261,7 @@ impl VoucherData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.info_text {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.extension {
             opt_val.write_uper(uper_buf)?;
@@ -4363,9 +4296,8 @@ impl FipTicketData {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 13)?;
         let (rest, reference_ia_5) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4385,9 +4317,8 @@ impl FipTicketData {
         };
         let (rest, product_owner_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4401,9 +4332,8 @@ impl FipTicketData {
         };
         let (rest, product_id_ia_5) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4461,9 +4391,8 @@ impl FipTicketData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -4523,7 +4452,7 @@ impl FipTicketData {
         crate::asn1_uper::encode_bool(uper_buf, self.class_code != TravelClassType::Second);
         crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -4532,13 +4461,13 @@ impl FipTicketData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if self.valid_from_day != crate::asn1_uper::Integer::from_short(0) {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(700) }, &self.valid_from_day)?;
@@ -4566,7 +4495,7 @@ impl FipTicketData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
     for item in &self.carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -4615,9 +4544,8 @@ impl StationPassageData {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 21)?;
         let (rest, reference_ia_5) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4637,9 +4565,8 @@ impl StationPassageData {
         };
         let (rest, product_owner_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4653,9 +4580,8 @@ impl StationPassageData {
         };
         let (rest, product_id_ia_5) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4663,9 +4589,8 @@ impl StationPassageData {
         };
         let (rest, product_name) = if optional_bits[6] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -4701,9 +4626,8 @@ impl StationPassageData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -4721,9 +4645,8 @@ impl StationPassageData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -4757,9 +4680,8 @@ impl StationPassageData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -4777,9 +4699,8 @@ impl StationPassageData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -4883,7 +4804,7 @@ impl StationPassageData {
         crate::asn1_uper::encode_bool(uper_buf, self.number_of_days_valid.is_some());
         crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -4892,16 +4813,16 @@ impl StationPassageData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_name {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.station_code_table != CodeTableType::StationUic {
             self.station_code_table.write_uper(uper_buf)?;
@@ -4918,7 +4839,7 @@ impl StationPassageData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.station_ia_5.len())?;
     for item in &self.station_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -4926,7 +4847,7 @@ impl StationPassageData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.station_name_utf_8.len())?;
     for item in &self.station_name_utf_8 {
-        crate::asn1_uper::encode_octet_string(uper_buf, item.as_bytes())?;
+        crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, item.as_bytes())?;
     }
 };
         }
@@ -4942,7 +4863,7 @@ impl StationPassageData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.area_code_ia_5.len())?;
     for item in &self.area_code_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -4950,7 +4871,7 @@ impl StationPassageData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.area_name_utf_8.len())?;
     for item in &self.area_name_utf_8 {
-        crate::asn1_uper::encode_octet_string(uper_buf, item.as_bytes())?;
+        crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, item.as_bytes())?;
     }
 };
         }
@@ -5011,9 +4932,8 @@ impl CustomerCardData {
         };
         let (rest, card_id_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5058,9 +4978,8 @@ impl CustomerCardData {
         };
         let (rest, card_type_descr) = if optional_bits[8] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5074,9 +4993,8 @@ impl CustomerCardData {
         };
         let (rest, customer_status_descr) = if optional_bits[10] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5142,7 +5060,7 @@ impl CustomerCardData {
             opt_val.write_uper(uper_buf)?;
         }
         if let Some(opt_val) = &self.card_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.card_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -5164,13 +5082,13 @@ impl CustomerCardData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(1000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.card_type_descr {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.customer_status {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.customer_status_descr {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if self.included_services.len() > 0 {
             {
@@ -5218,9 +5136,8 @@ impl ParkingGroundData {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 17)?;
         let (rest, reference_ia_5) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5233,9 +5150,8 @@ impl ParkingGroundData {
             (rest, None)
         };
         let (rest, parking_ground_id) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         let (rest, from_parking_date) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(370) })?;
         let (rest, until_parking_date) = if optional_bits[2] {
@@ -5252,9 +5168,8 @@ impl ParkingGroundData {
         };
         let (rest, product_owner_ia_5) = if optional_bits[4] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5268,9 +5183,8 @@ impl ParkingGroundData {
         };
         let (rest, product_id_ia_5) = if optional_bits[6] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5278,18 +5192,16 @@ impl ParkingGroundData {
         };
         let (rest, access_code) = if optional_bits[7] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
             (rest, None)
         };
         let (rest, location) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         let (rest, station_code_table) = if optional_bits[8] {
             CodeTableType::try_from_uper(rest)?
@@ -5305,9 +5217,8 @@ impl ParkingGroundData {
         };
         let (rest, station_ia_5) = if optional_bits[10] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5315,9 +5226,8 @@ impl ParkingGroundData {
         };
         let (rest, special_information) = if optional_bits[11] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5325,9 +5235,8 @@ impl ParkingGroundData {
         };
         let (rest, entry_track) = if optional_bits[12] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5335,9 +5244,8 @@ impl ParkingGroundData {
         };
         let (rest, number_plate) = if optional_bits[13] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5416,12 +5324,12 @@ impl ParkingGroundData {
         crate::asn1_uper::encode_bool(uper_buf, self.vat_detail.len() > 0);
         crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
-        crate::asn1_uper::encode_ia5_string(uper_buf, &self.parking_ground_id)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.parking_ground_id)?;
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-367), max: crate::asn1_uper::Integer::from_short(370) }, &self.from_parking_date)?;
         if self.until_parking_date != crate::asn1_uper::Integer::from_short(0) {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(500) }, &self.until_parking_date)?;
@@ -5430,18 +5338,18 @@ impl ParkingGroundData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.access_code {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
-        crate::asn1_uper::encode_octet_string(uper_buf, self.location.as_bytes())?;
+        crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.location.as_bytes())?;
         if self.station_code_table != CodeTableType::StationUic {
             self.station_code_table.write_uper(uper_buf)?;
         }
@@ -5449,16 +5357,16 @@ impl ParkingGroundData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.station_ia_5 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.special_information {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.entry_track {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.number_plate {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.price {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -5524,9 +5432,8 @@ impl CountermarkData {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 31)?;
         let (rest, reference_ia_5) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5546,9 +5453,8 @@ impl CountermarkData {
         };
         let (rest, product_owner_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5562,9 +5468,8 @@ impl CountermarkData {
         };
         let (rest, product_id_ia_5) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5572,9 +5477,8 @@ impl CountermarkData {
         };
         let (rest, ticket_reference_ia_5) = if optional_bits[6] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5589,9 +5493,8 @@ impl CountermarkData {
         let (rest, number_of_countermark) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(200) })?;
         let (rest, total_of_countermarks) = crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(200) })?;
         let (rest, group_name) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         let (rest, station_code_table) = if optional_bits[8] {
             CodeTableType::try_from_uper(rest)?
@@ -5607,9 +5510,8 @@ impl CountermarkData {
         };
         let (rest, from_station_ia_5) = if optional_bits[10] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5623,9 +5525,8 @@ impl CountermarkData {
         };
         let (rest, to_station_ia_5) = if optional_bits[12] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5633,9 +5534,8 @@ impl CountermarkData {
         };
         let (rest, from_station_name_utf_8) = if optional_bits[13] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5643,9 +5543,8 @@ impl CountermarkData {
         };
         let (rest, to_station_name_utf_8) = if optional_bits[14] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5653,9 +5552,8 @@ impl CountermarkData {
         };
         let (rest, valid_region_desc) = if optional_bits[15] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5750,9 +5648,8 @@ impl CountermarkData {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -5796,9 +5693,8 @@ impl CountermarkData {
         };
         let (rest, info_text) = if optional_bits[29] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -5884,7 +5780,7 @@ impl CountermarkData {
         crate::asn1_uper::encode_bool(uper_buf, self.info_text.is_some());
         crate::asn1_uper::encode_bool(uper_buf, self.extension.is_some());
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -5893,23 +5789,23 @@ impl CountermarkData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.ticket_reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.ticket_reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(200) }, &self.number_of_countermark)?;
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(200) }, &self.total_of_countermarks)?;
-        crate::asn1_uper::encode_octet_string(uper_buf, self.group_name.as_bytes())?;
+        crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.group_name.as_bytes())?;
         if self.station_code_table != CodeTableType::StationUic {
             self.station_code_table.write_uper(uper_buf)?;
         }
@@ -5917,22 +5813,22 @@ impl CountermarkData {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.to_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.valid_region_desc {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.valid_region.len() > 0 {
             {
@@ -5979,7 +5875,7 @@ impl CountermarkData {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
     for item in &self.carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -6000,7 +5896,7 @@ impl CountermarkData {
 };
         }
         if let Some(opt_val) = &self.info_text {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.extension {
             opt_val.write_uper(uper_buf)?;
@@ -6016,11 +5912,10 @@ pub struct ExtensionData {
 impl ExtensionData {
     pub fn try_from_uper<'a>(rest: &'a [bool]) -> Result<(&'a [bool], Self), nom::Err<crate::asn1_uper::DecodingError<'a>>> {
         let (rest, extension_id) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
-        let (rest, extension_data) = crate::asn1_uper::decode_octet_string(rest)?;
+        let (rest, extension_data) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
         let sequence = Self {
             extension_id,
             extension_data,
@@ -6029,8 +5924,8 @@ impl ExtensionData {
     }
 
     pub fn write_uper(&self, uper_buf: &mut Vec<bool>) -> Result<(), crate::asn1_uper::EncodingError> {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &self.extension_id)?;
-        crate::asn1_uper::encode_octet_string(uper_buf, &self.extension_data)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.extension_id)?;
+        crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.extension_data)?;
         Ok(())
     }
 }
@@ -6077,9 +5972,8 @@ impl IncludedOpenTicketType {
         };
         let (rest, product_owner_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6093,9 +5987,8 @@ impl IncludedOpenTicketType {
         };
         let (rest, product_id_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6179,9 +6072,8 @@ impl IncludedOpenTicketType {
         };
         let (rest, service_level) = if optional_bits[15] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(2) })?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6211,9 +6103,8 @@ impl IncludedOpenTicketType {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -6273,9 +6164,8 @@ impl IncludedOpenTicketType {
         };
         let (rest, info_text) = if optional_bits[21] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6380,13 +6270,13 @@ impl IncludedOpenTicketType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(65535) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.external_issuer_id {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -6427,7 +6317,7 @@ impl IncludedOpenTicketType {
             opt_val.write_uper(uper_buf)?;
         }
         if let Some(opt_val) = &self.service_level {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(2) }, &opt_val)?;
         }
         if self.carrier_num.len() > 0 {
             {
@@ -6441,7 +6331,7 @@ impl IncludedOpenTicketType {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
     for item in &self.carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -6470,7 +6360,7 @@ impl IncludedOpenTicketType {
 };
         }
         if let Some(opt_val) = &self.info_text {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.included_transport_type.len() > 0 {
             {
@@ -6577,9 +6467,8 @@ impl TariffType {
         };
         let (rest, tariff_id_ia_5) = if optional_bits[8] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6587,9 +6476,8 @@ impl TariffType {
         };
         let (rest, tariff_desc) = if optional_bits[9] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6672,10 +6560,10 @@ impl TariffType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.tariff_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.tariff_desc {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.reduction_card.len() > 0 {
             {
@@ -6766,9 +6654,8 @@ impl RouteSectionType {
         };
         let (rest, from_station_ia_5) = if optional_bits[2] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6782,9 +6669,8 @@ impl RouteSectionType {
         };
         let (rest, to_station_ia_5) = if optional_bits[4] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6792,9 +6678,8 @@ impl RouteSectionType {
         };
         let (rest, from_station_name_utf_8) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6802,9 +6687,8 @@ impl RouteSectionType {
         };
         let (rest, to_station_name_utf_8) = if optional_bits[6] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6837,19 +6721,19 @@ impl RouteSectionType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.to_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         Ok(())
     }
@@ -6882,9 +6766,8 @@ impl CardReferenceType {
         };
         let (rest, card_issuer_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6898,9 +6781,8 @@ impl CardReferenceType {
         };
         let (rest, card_id_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6908,9 +6790,8 @@ impl CardReferenceType {
         };
         let (rest, card_name) = if optional_bits[4] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6930,9 +6811,8 @@ impl CardReferenceType {
         };
         let (rest, leading_card_id_ia_5) = if optional_bits[7] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6946,9 +6826,8 @@ impl CardReferenceType {
         };
         let (rest, trailing_card_id_ia_5) = if optional_bits[9] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -6985,16 +6864,16 @@ impl CardReferenceType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.card_issuer_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.card_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.card_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.card_name {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.card_type {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -7003,13 +6882,13 @@ impl CardReferenceType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.leading_card_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.trailing_card_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.trailing_card_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         Ok(())
     }
@@ -7045,9 +6924,8 @@ impl TravelerType {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 18)?;
         let (rest, first_name) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7055,9 +6933,8 @@ impl TravelerType {
         };
         let (rest, second_name) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7065,9 +6942,8 @@ impl TravelerType {
         };
         let (rest, last_name) = if optional_bits[2] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7075,9 +6951,8 @@ impl TravelerType {
         };
         let (rest, id_card) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7085,9 +6960,8 @@ impl TravelerType {
         };
         let (rest, passport_id) = if optional_bits[4] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7095,9 +6969,8 @@ impl TravelerType {
         };
         let (rest, title) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(3) })?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7111,9 +6984,8 @@ impl TravelerType {
         };
         let (rest, customer_id_ia_5) = if optional_bits[7] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7235,28 +7107,28 @@ impl TravelerType {
         crate::asn1_uper::encode_bool(uper_buf, self.country_of_id_card.is_some());
         crate::asn1_uper::encode_bool(uper_buf, self.status.len() > 0);
         if let Some(opt_val) = &self.first_name {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.second_name {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.last_name {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.id_card {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.passport_id {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.title {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(3) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.gender {
             opt_val.write_uper(uper_buf)?;
         }
         if let Some(opt_val) = &self.customer_id_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.customer_id_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -7315,9 +7187,8 @@ impl CustomerStatusType {
         };
         let (rest, status_provider_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7331,9 +7202,8 @@ impl CustomerStatusType {
         };
         let (rest, customer_status_descr) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7357,13 +7227,13 @@ impl CustomerStatusType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.status_provider_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.customer_status {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.customer_status_descr {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         Ok(())
     }
@@ -7394,9 +7264,8 @@ impl ReturnRouteDescriptionType {
         };
         let (rest, from_station_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7410,9 +7279,8 @@ impl ReturnRouteDescriptionType {
         };
         let (rest, to_station_ia_5) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7420,9 +7288,8 @@ impl ReturnRouteDescriptionType {
         };
         let (rest, from_station_name_utf_8) = if optional_bits[4] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7430,9 +7297,8 @@ impl ReturnRouteDescriptionType {
         };
         let (rest, to_station_name_utf_8) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7440,9 +7306,8 @@ impl ReturnRouteDescriptionType {
         };
         let (rest, valid_return_region_desc) = if optional_bits[6] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7491,22 +7356,22 @@ impl ReturnRouteDescriptionType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.to_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.valid_return_region_desc {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.valid_return_region.len() > 0 {
             {
@@ -7622,9 +7487,8 @@ impl TrainLinkType {
         };
         let (rest, train_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7646,9 +7510,8 @@ impl TrainLinkType {
         };
         let (rest, from_station_ia_5) = if optional_bits[4] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7662,9 +7525,8 @@ impl TrainLinkType {
         };
         let (rest, to_station_ia_5) = if optional_bits[6] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7672,9 +7534,8 @@ impl TrainLinkType {
         };
         let (rest, from_station_name_utf_8) = if optional_bits[7] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7682,9 +7543,8 @@ impl TrainLinkType {
         };
         let (rest, to_station_name_utf_8) = if optional_bits[8] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7720,7 +7580,7 @@ impl TrainLinkType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.train_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(-1), max: crate::asn1_uper::Integer::from_short(500) }, &self.travel_date)?;
         crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(0), max: crate::asn1_uper::Integer::from_short(1439) }, &self.departure_time)?;
@@ -7731,19 +7591,19 @@ impl TrainLinkType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.to_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.from_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.to_station_name_utf_8 {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         Ok(())
     }
@@ -7775,9 +7635,8 @@ impl LineType {
         };
         let (rest, carrier_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7813,9 +7672,8 @@ impl LineType {
         };
         let (rest, entry_station_ia_5) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7829,9 +7687,8 @@ impl LineType {
         };
         let (rest, terminating_station_ia_5) = if optional_bits[7] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7872,7 +7729,7 @@ impl LineType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.carrier_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if self.line_id.len() > 0 {
             {
@@ -7889,13 +7746,13 @@ impl LineType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.entry_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.terminating_station_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.terminating_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.city {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -7932,9 +7789,8 @@ impl ZoneType {
         };
         let (rest, carrier_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7954,9 +7810,8 @@ impl ZoneType {
         };
         let (rest, entry_station_ia_5) = if optional_bits[4] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -7970,9 +7825,8 @@ impl ZoneType {
         };
         let (rest, terminating_station_ia_5) = if optional_bits[6] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8001,16 +7855,15 @@ impl ZoneType {
             (rest, Vec::new())
         };
         let (rest, binary_zone_id) = if optional_bits[9] {
-            let (rest, value) = crate::asn1_uper::decode_octet_string(rest)?;
+            let (rest, value) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
             (rest, Some(value))
         } else {
             (rest, None)
         };
         let (rest, nuts_code) = if optional_bits[10] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8049,7 +7902,7 @@ impl ZoneType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.carrier_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if self.station_code_table != CodeTableType::StationUic {
             self.station_code_table.write_uper(uper_buf)?;
@@ -8058,13 +7911,13 @@ impl ZoneType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.entry_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.terminating_station_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.terminating_station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.city {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
@@ -8078,10 +7931,10 @@ impl ZoneType {
 };
         }
         if let Some(opt_val) = &self.binary_zone_id {
-            crate::asn1_uper::encode_octet_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.nuts_code {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         Ok(())
     }
@@ -8122,9 +7975,8 @@ impl ViaStationType {
         };
         let (rest, station_ia_5) = if optional_bits[2] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8187,9 +8039,8 @@ impl ViaStationType {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -8280,7 +8131,7 @@ impl ViaStationType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(9999999) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.station_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if self.alternative_routes.len() > 0 {
             {
@@ -8311,7 +8162,7 @@ impl ViaStationType {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.carrier_ia_5.len())?;
     for item in &self.carrier_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -8396,9 +8247,8 @@ impl TokenType {
         };
         let (rest, token_provider_ia_5) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8406,15 +8256,14 @@ impl TokenType {
         };
         let (rest, token_specification) = if optional_bits[2] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
             (rest, None)
         };
-        let (rest, token) = crate::asn1_uper::decode_octet_string(rest)?;
+        let (rest, token) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
         let sequence = Self {
             token_provider_num,
             token_provider_ia_5,
@@ -8432,12 +8281,12 @@ impl TokenType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.token_provider_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.token_specification {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
-        crate::asn1_uper::encode_octet_string(uper_buf, &self.token)?;
+        crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &self.token)?;
         Ok(())
     }
 }
@@ -8461,9 +8310,8 @@ impl TicketLinkType {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 8)?;
         let (rest, reference_ia_5) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8477,9 +8325,8 @@ impl TicketLinkType {
         };
         let (rest, issuer_name) = if optional_bits[2] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8487,9 +8334,8 @@ impl TicketLinkType {
         };
         let (rest, issuer_pnr) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8503,9 +8349,8 @@ impl TicketLinkType {
         };
         let (rest, product_owner_ia_5) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8547,22 +8392,22 @@ impl TicketLinkType {
         crate::asn1_uper::encode_bool(uper_buf, self.ticket_type != TicketType::OpenTicket);
         crate::asn1_uper::encode_bool(uper_buf, self.link_mode != LinkMode::IssuedTogether);
         if let Some(opt_val) = &self.reference_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.reference_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.issuer_name {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.issuer_pnr {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_num {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(32000) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.product_owner_ia_5 {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if self.ticket_type != TicketType::OpenTicket {
             self.ticket_type.write_uper(uper_buf)?;
@@ -8770,9 +8615,8 @@ impl PlacesType {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 5)?;
         let (rest, coach) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8780,9 +8624,8 @@ impl PlacesType {
         };
         let (rest, place_string) = if optional_bits[1] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8790,9 +8633,8 @@ impl PlacesType {
         };
         let (rest, place_description) = if optional_bits[2] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -8806,9 +8648,8 @@ impl PlacesType {
     let mut buf = Vec::with_capacity(length_usize);
     for _ in 0..length_usize {
         let (new_rest, member) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
         buf.push(member);
         rest = new_rest;
@@ -8851,19 +8692,19 @@ impl PlacesType {
         crate::asn1_uper::encode_bool(uper_buf, self.place_ia_5.len() > 0);
         crate::asn1_uper::encode_bool(uper_buf, self.place_num.len() > 0);
         if let Some(opt_val) = &self.coach {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.place_string {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.place_description {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.place_ia_5.len() > 0 {
             {
     crate::asn1_uper::encode_length(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, self.place_ia_5.len())?;
     for item in &self.place_ia_5 {
-        crate::asn1_uper::encode_ia5_string(uper_buf, &item)?;
+        crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &item)?;
     }
 };
         }
@@ -9163,9 +9004,8 @@ impl CompartmentDetailsType {
         };
         let (rest, coach_type_descr) = if optional_bits[3] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -9173,9 +9013,8 @@ impl CompartmentDetailsType {
         };
         let (rest, compartment_type_descr) = if optional_bits[4] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -9183,9 +9022,8 @@ impl CompartmentDetailsType {
         };
         let (rest, special_allocation_descr) = if optional_bits[5] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -9228,13 +9066,13 @@ impl CompartmentDetailsType {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(99) }, &opt_val)?;
         }
         if let Some(opt_val) = &self.coach_type_descr {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.compartment_type_descr {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if let Some(opt_val) = &self.special_allocation_descr {
-            crate::asn1_uper::encode_octet_string(uper_buf, opt_val.as_bytes())?;
+            crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, opt_val.as_bytes())?;
         }
         if self.position != CompartmentPositionType::Unspecified {
             self.position.write_uper(uper_buf)?;
@@ -9328,9 +9166,8 @@ impl RegisteredLuggageType {
         let (rest, optional_bits) = crate::asn1_uper::decode_bools(rest, 3)?;
         let (rest, registration_id) = if optional_bits[0] {
             let (rest, value) = {
-    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;
-    let utf8_string = String::from_utf8(octet_string).expect("failed to decode UTF-8 string as UTF-8");
-    (rest, utf8_string)
+    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::Unconstrained)?;
+    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?
 };
             (rest, Some(value))
         } else {
@@ -9362,7 +9199,7 @@ impl RegisteredLuggageType {
         crate::asn1_uper::encode_bool(uper_buf, self.max_weight.is_some());
         crate::asn1_uper::encode_bool(uper_buf, self.max_size.is_some());
         if let Some(opt_val) = &self.registration_id {
-            crate::asn1_uper::encode_ia5_string(uper_buf, &opt_val)?;
+            crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Unconstrained, &opt_val)?;
         }
         if let Some(opt_val) = &self.max_weight {
             crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::Constrained { min: crate::asn1_uper::Integer::from_short(1), max: crate::asn1_uper::Integer::from_short(99) }, &opt_val)?;

@@ -319,6 +319,17 @@ def to_rust_type(type_def: dict[str, Any], parent_type: Optional[str] = None) ->
         return inner_type
 
 
+def string_size_constraint(type_def: dict[str, Any]) -> str:
+    size = type_def.get("size", None)
+    if size is not None:
+        if isinstance(size[0], tuple):
+            (min_size, max_size) = size[0]
+        else:
+            min_size = max_size = size[0]
+        return f"Constrained {{ min: crate::asn1_uper::Integer::from_short({min_size}), max: crate::asn1_uper::Integer::from_short({max_size}) }}"
+    return "Unconstrained"
+
+
 def rust_deserialize_call(member: Union[dict[str, Any], str], parent_type: Optional[str] = None) -> str:
     if isinstance(member, str):
         member = {"type": member}
@@ -333,18 +344,21 @@ def rust_deserialize_call(member: Union[dict[str, Any], str], parent_type: Optio
             constraint_string = "Unconstrained"
         return f"crate::asn1_uper::decode_integer(rest, &crate::asn1_uper::WholeNumberConstraint::{constraint_string})?"
     elif type_name == "OCTET STRING":
-        return "crate::asn1_uper::decode_octet_string(rest)?"
+        size_constraint = string_size_constraint(member)
+        return f"crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::{size_constraint})?"
     elif type_name == "BOOLEAN":
         return "crate::asn1_uper::decode_bool(rest)?"
     elif type_name == "UTF8String":
+        size_constraint = string_size_constraint(member)
         lines = ["{"]
-        lines.append("    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest)?;")
+        lines.append(f"    let (rest, octet_string) = crate::asn1_uper::decode_octet_string(rest, &crate::asn1_uper::WholeNumberConstraint::{size_constraint})?;")
         lines.append("    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?")
         lines.append("}")
         return "\n".join(lines)
     elif type_name == "IA5String":
+        size_constraint = string_size_constraint(member)
         lines = ["{"]
-        lines.append("    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest)?;")
+        lines.append(f"    let (rest, octet_string) = crate::asn1_uper::decode_ia5_string(rest, &crate::asn1_uper::WholeNumberConstraint::{size_constraint})?;")
         lines.append("    crate::asn1_uper::octet_string_to_utf8(rest, octet_string)?")
         lines.append("}")
         return "\n".join(lines)
@@ -387,14 +401,17 @@ def rust_serialize_call(member: Union[dict[str, Any], str], parent_type: Optiona
             constraint_string = "Unconstrained"
         return f"crate::asn1_uper::encode_integer(uper_buf, &crate::asn1_uper::WholeNumberConstraint::{constraint_string}, &{self_prefix_text}{rust_member_name})?"
     elif type_name == "OCTET STRING":
-        return f"crate::asn1_uper::encode_octet_string(uper_buf, &{self_prefix_text}{rust_member_name})?"
+        size_constraint = string_size_constraint(member)
+        return f"crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::{size_constraint}, &{self_prefix_text}{rust_member_name})?"
     elif type_name == "BOOLEAN":
         star = "*" if deref else ""
         return f"crate::asn1_uper::encode_bool(uper_buf, {star}{self_prefix_text}{rust_member_name})"
     elif type_name == "UTF8String":
-        return f"crate::asn1_uper::encode_octet_string(uper_buf, {self_prefix_text}{rust_member_name}.as_bytes())?"
+        size_constraint = string_size_constraint(member)
+        return f"crate::asn1_uper::encode_octet_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::{size_constraint}, {self_prefix_text}{rust_member_name}.as_bytes())?"
     elif type_name == "IA5String":
-        return f"crate::asn1_uper::encode_ia5_string(uper_buf, &{self_prefix_text}{rust_member_name})?"
+        size_constraint = string_size_constraint(member)
+        return f"crate::asn1_uper::encode_ia5_string(uper_buf, &crate::asn1_uper::WholeNumberConstraint::{size_constraint}, &{self_prefix_text}{rust_member_name})?"
     elif type_name == "SEQUENCE OF":
         # TODO: handle length constraints
         member_element = dict(member["element"])
