@@ -695,7 +695,7 @@ pub fn decode_ia5_string<'a>(bits: &'a [bool], length_constraint: &WholeNumberCo
 
 
 /// Encodes an octet string.
-/// 
+///
 /// The encoding is specified in X.691 § 17.
 #[must_use]
 pub fn encode_octet_string(uper_buf: &mut Vec<bool>, length_constraint: &WholeNumberConstraint, value: &[u8]) -> Result<(), EncodingError> {
@@ -711,7 +711,7 @@ pub fn encode_octet_string(uper_buf: &mut Vec<bool>, length_constraint: &WholeNu
 }
 
 /// Encodes an IA5 string.
-/// 
+///
 /// The encoding is specified in X.691 § 17 in conjunction with § 30.5.3.
 #[must_use]
 pub fn encode_ia5_string(uper_buf: &mut Vec<bool>, length_constraint: &WholeNumberConstraint, value: &str) -> Result<(), EncodingError> {

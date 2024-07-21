@@ -85,7 +85,7 @@ impl<'a> fmt::Display for CanvasInABox<'a> {
             write!(f, "{}", tens)?;
         }
         writeln!(f)?;
-        
+
         write!(f, "  ")?;
         for i in 1..self.0.width()+1 {
             let ones = i % 10;
