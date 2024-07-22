@@ -1,4 +1,5 @@
 mod asn1_uper;
+mod key_db;
 mod pngify;
 mod uflex_3;
 mod uflex_3_ext;
@@ -15,6 +16,7 @@ use rand::Rng as _;
 use rxing::Writer as _;
 
 use crate::asn1_uper::{to_bits_msb_first, to_bytes_msb_first};
+use crate::key_db::Signature;
 use crate::uflex_3_ext::output_ticket_validity;
 
 
@@ -28,6 +30,10 @@ enum ProgMode {
 #[derive(Parser)]
 struct BarcodeArgs {
     pub barcode_path: String,
+
+    /// Path to the XML key database for verification.
+    #[arg(short, long)]
+    pub keys_path: Option<PathBuf>,
 }
 
 #[derive(Parser)]
@@ -36,6 +42,10 @@ struct DataArgs {
 
     #[arg(short, long)]
     pub re_encode_path: Option<PathBuf>,
+
+    /// Path to the XML key database for verification.
+    #[arg(short, long)]
+    pub keys_path: Option<PathBuf>,
 }
 
 #[derive(Parser)]
@@ -165,19 +175,19 @@ fn encode(encode_args: EncodeArgs) {
 
 fn main() {
     let prog_mode = ProgMode::parse();
-    let (barcode_contents, re_encode_path) = match prog_mode {
+    let (barcode_contents, re_encode_path, keys_path_opt) = match prog_mode {
         ProgMode::Barcode(barcode_args) => {
             let barcode = rxing::helpers::detect_in_file(&barcode_args.barcode_path, None)
                 .expect("failed to detect Aztec barcode");
             let barcode_contents: Vec<u8> = barcode.getText().chars()
                 .map(|c| u8::try_from(u32::from(c)).expect("failed to decode character as byte"))
                 .collect();
-            (barcode_contents, None)
+            (barcode_contents, None, barcode_args.keys_path)
         },
         ProgMode::Data(data_args) => {
             let data = std::fs::read(&data_args.data_path)
                 .expect("failed to read barcode data");
-            (data, data_args.re_encode_path)
+            (data, data_args.re_encode_path, data_args.keys_path)
         },
         ProgMode::Encode(encode_args) => {
             encode(encode_args);
@@ -193,7 +203,7 @@ fn main() {
         panic!("barcode does not contain a UIC ticket");
     }
     let version = &barcode_contents[3..5];
-    let compressed_bytes = if version == b"01" {
+    let (compressed_bytes, signer_number, key_id, signature) = if version == b"01" {
         println!("UIC ticket version 1");
 
         let signer_number_bytes = &barcode_contents[5..9];
@@ -216,7 +226,7 @@ fn main() {
         let compressed_len: usize = compressed_len_string.parse()
             .expect("compressed length is not parsable");
         println!("  compressed data length is {} bytes", compressed_len);
-        &barcode_contents[68..68+compressed_len]
+        (&barcode_contents[68..68+compressed_len], signer_number, key_id, Signature::Asn1(signature_bytes.to_vec()))
     } else if version == b"02" {
         println!("UIC ticket version 2");
 
@@ -244,13 +254,36 @@ fn main() {
         let compressed_len: usize = compressed_len_string.parse()
             .expect("compressed length is not parsable");
         println!("  compressed data length is {} bytes", compressed_len);
-        &barcode_contents[82..82+compressed_len]
+        (&barcode_contents[82..82+compressed_len], signer_number, key_id, Signature::Dsa { r: signature_r.to_vec(), s: signature_s.to_vec() })
     } else {
         panic!("unknown UIC ticket version {:?}", version);
     };
 
     print!("  compressed data bytes:");
     hexdump(compressed_bytes);
+
+    // verify?
+    if let Some(keys_path) = keys_path_opt {
+        let keys_db_string = std::fs::read_to_string(keys_path)
+            .expect("failed to read key database");
+        let keys_db = crate::key_db::database_from_xml(&keys_db_string)
+            .expect("failed to parse key database");
+
+        let signer_number_u16: u16 = signer_number.parse()
+            .expect("failed to parse signer number as u16");
+        let key_id_u32: u32 = key_id.parse()
+            .expect("failed to parse key ID as u32");
+        let key = keys_db.get(&(signer_number_u16, key_id_u32))
+            .expect("key not found, cannot verify");
+
+        let data_valid = key.verify(&signature, &compressed_bytes)
+            .expect("verification failed");
+        if data_valid {
+            println!("  signature is OK");
+        } else {
+            panic!("signature is invalid!");
+        }
+    }
 
     // uncompress
     let mut data_bytes = Vec::new();
