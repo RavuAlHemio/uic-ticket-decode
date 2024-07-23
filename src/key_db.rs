@@ -4,18 +4,22 @@ use std::fmt;
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use chrono::NaiveDate;
+use der::oid::ObjectIdentifier;
 use der::{Decode, Reader, SliceReader};
-use der::asn1::{SequenceOf, Uint};
+use der::asn1::Uint;
 use digest::Digest;
+use digest::generic_array::GenericArray;
 use dsa::BigUint;
-use dsa::signature::DigestVerifier;
+use ecdsa::EncodedPoint;
+use p256::NistP256;
 use sha1::Sha1;
 use sha2::{Sha224, Sha256};
-use simple_asn1::{self, ASN1Block};
 use sxd_document::QName;
 use sxd_document::dom::Element;
 use x509_cert::spki::SubjectPublicKeyInfoOwned;
 use x509_cert::Certificate;
+
+use crate::cryptography::{DsaParametersAsn1, DsaSignatureAsn1, DsaSignatureVerifier, EcdsaSignatureVerifier, SignatureVerifier};
 
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -32,31 +36,33 @@ impl Signature {
                 (r_int, s_int)
             },
             Self::Asn1(bs) => {
-                // expect SEQUENCE of two 160-bit INTEGERs (r, s)
-                let mut asn1 = simple_asn1::from_der(bs)?;
-                if asn1.len() < 1 {
-                    return Err(Error::UnexpectedDsaSignatureStructure(asn1));
-                }
-                let seq_block = asn1.remove(0);
-                let ASN1Block::Sequence(_, mut seq) = seq_block else {
-                    return Err(Error::UnexpectedDsaSignatureStructure(asn1));
-                };
-                if seq.len() != 2 {
-                    return Err(Error::UnexpectedDsaSignatureStructure(asn1));
-                }
-                let ASN1Block::Integer(_, s) = seq.remove(1) else {
-                    return Err(Error::UnexpectedDsaSignatureStructure(asn1));
-                };
-                let ASN1Block::Integer(_, r) = seq.remove(0) else {
-                    return Err(Error::UnexpectedDsaSignatureStructure(asn1));
-                };
+                let dsa_signature = DsaSignatureAsn1::from_der(bs)
+                    .map_err(|e| Error::UnexpectedDsaSignatureStructure(e))?;
 
-                let r_int = BigUint::from_bytes_be(&r.to_bytes_be().1);
-                let s_int = BigUint::from_bytes_be(&s.to_bytes_be().1);
+                let r_int = BigUint::from_bytes_be(&dsa_signature.r.as_bytes());
+                let s_int = BigUint::from_bytes_be(&dsa_signature.s.as_bytes());
                 (r_int, s_int)
             },
         };
         let signature = dsa::Signature::from_components(r_int, s_int)?;
+        Ok(signature)
+    }
+
+    pub fn to_p256_ecdsa_signature(&self) -> Result<ecdsa::Signature<NistP256>, Error> {
+        let signature = match self {
+            Self::Dsa { r, s } => {
+                let r_bytes = GenericArray::from_exact_iter(r.iter().cloned())
+                    .ok_or(Error::MalformedEcdsaSignature)?;
+                let s_bytes = GenericArray::from_exact_iter(s.iter().cloned())
+                    .ok_or(Error::MalformedEcdsaSignature)?;
+                ecdsa::Signature::from_scalars(r_bytes, s_bytes)
+                    .map_err(|_| Error::MalformedEcdsaSignature)?
+            },
+            Self::Asn1(bs) => {
+                ecdsa::Signature::from_der(bs)
+                    .map_err(|_| Error::MalformedEcdsaSignature)?
+            },
+        };
         Ok(signature)
     }
 }
@@ -80,27 +86,21 @@ pub struct Key {
 }
 impl Key {
     fn assemble_dsa_key(&self) -> Result<dsa::VerifyingKey, Error> {
-        let Some(params) = &self.subject_public_key_info.algorithm.parameters else {
+        let Some(params_any) = &self.subject_public_key_info.algorithm.parameters else {
             return Err(Error::MissingDsaParameters);
         };
 
         // RFC 3279 § 2.3.2
 
         // parameters
-        let seq: SequenceOf<Uint, 4> = match params.decode_as() {
-            Ok(s) => s,
+        let params: DsaParametersAsn1 = match params_any.decode_as() {
+            Ok(p) => p,
             Err(_) => return Err(Error::MalformedDsaParameters),
         };
-        if seq.len() != 3 {
-            return Err(Error::MalformedDsaParameters);
-        }
-        let p_uint = seq.get(0).unwrap();
-        let q_uint = seq.get(1).unwrap();
-        let g_uint = seq.get(2).unwrap();
 
-        let p = BigUint::from_bytes_be(p_uint.as_bytes());
-        let q = BigUint::from_bytes_be(q_uint.as_bytes());
-        let g = BigUint::from_bytes_be(g_uint.as_bytes());
+        let p = BigUint::from_bytes_be(params.p.as_bytes());
+        let q = BigUint::from_bytes_be(params.q.as_bytes());
+        let g = BigUint::from_bytes_be(params.g.as_bytes());
 
         // key itself
         let key_bit_string = &self.subject_public_key_info.subject_public_key;
@@ -117,35 +117,79 @@ impl Key {
             .map_err(|_| Error::MalformedDsaKey)
     }
 
+    fn assemble_dsa_verifier(&self, signature: &Signature) -> Result<Box<dyn SignatureVerifier>, Error> {
+        let key = self.assemble_dsa_key()?;
+        let expected_dsa_signature = signature.to_dsa_signature()?;
+        Ok(Box::new(DsaSignatureVerifier {
+            key,
+            signature: expected_dsa_signature,
+        }))
+    }
+
+    fn assemble_ecdsa_verifier(&self, signature: &Signature) -> Result<Box<dyn SignatureVerifier>, Error> {
+        // find out which curve is being used
+        // parameters is a CHOICE of ECParameters|OBJECT IDENTIFIER|NULL
+        // to us, only OBJECT IDENTIFIER (named curve) is acceptable
+        const CURVE_PRIME256V1: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.2.840.10045.3.1.7");
+
+        let parameters_any = match self.subject_public_key_info.algorithm.parameters.as_ref() {
+            Some(p) => p,
+            None => return Err(Error::MissingEcdsaParameters),
+        };
+        let curve_name: ObjectIdentifier = parameters_any.decode_as()
+            .map_err(|_| Error::EcdsaCurveNotNamed)?;
+        if curve_name == CURVE_PRIME256V1 {
+            let public_key = self.subject_public_key_info.subject_public_key.as_bytes()
+                .ok_or(Error::MalformedEcdsaKey)?;
+            let public_point = EncodedPoint::<NistP256>::from_bytes(public_key)
+                .map_err(|_| Error::MalformedEcdsaKey)?;
+            let key = ecdsa::VerifyingKey::<NistP256>::from_encoded_point(&public_point)
+                .map_err(|_| Error::MalformedEcdsaKey)?;
+
+            // oddly enough, the signature itself has the same structure as classic DSA
+            let expected_ecdsa_signature = signature.to_p256_ecdsa_signature()?;
+            Ok(Box::new(EcdsaSignatureVerifier {
+                key,
+                signature: expected_ecdsa_signature,
+            }))
+        } else {
+            Err(Error::UnsupportedCurve(curve_name))
+        }
+    }
+
     pub fn verify(&self, signature: &Signature, data: &[u8]) -> Result<bool, Error> {
         match self.signature_algorithm.as_str() {
             "DSA_SHA1 (1024)"|"DSA1024"|"SHA1-DSA (1024,160)"|"SHA1-DSA (1024)"|"SHA1withDSA"|"SHA1withDSA(1024,160)" => {
-                let key = self.assemble_dsa_key()?;
-                let expected_dsa_signature = signature.to_dsa_signature()?;
+                let verifier = self.assemble_dsa_verifier(signature)?;
 
                 // perform the digest
                 let mut sha1 = Sha1::new();
                 sha1.update(data);
+                let sha1_digest = sha1.finalize();
 
                 // verify it
-                Ok(key.verify_digest(sha1, &expected_dsa_signature).is_ok())
+                Ok(verifier.verify_prehash(&sha1_digest).is_ok())
             },
             "SHA224withDSA" => {
-                let key = self.assemble_dsa_key()?;
-                let expected_dsa_signature = signature.to_dsa_signature()?;
+                let verifier = self.assemble_dsa_verifier(signature)?;
                 let mut sha224 = Sha224::new();
                 sha224.update(data);
-                Ok(key.verify_digest(sha224, &expected_dsa_signature).is_ok())
+                let sha224_digest = sha224.finalize();
+                Ok(verifier.verify_prehash(&sha224_digest).is_ok())
             },
             "SHA256withDSA(2048,256)" => {
-                let key = self.assemble_dsa_key()?;
-                let expected_dsa_signature = signature.to_dsa_signature()?;
+                let verifier = self.assemble_dsa_verifier(signature)?;
                 let mut sha256 = Sha256::new();
                 sha256.update(data);
-                Ok(key.verify_digest(sha256, &expected_dsa_signature).is_ok())
+                let sha256_digest = sha256.finalize();
+                Ok(verifier.verify_prehash(&sha256_digest).is_ok())
             },
             "SHA256withECDSA"|"SHA256withECDSA-P256" => {
-                todo!("ECDSA key decoding is a work in progress");
+                let verifier = self.assemble_ecdsa_verifier(signature)?;
+                let mut sha256 = Sha256::new();
+                sha256.update(data);
+                let sha256_digest = sha256.finalize();
+                Ok(verifier.verify_prehash(&sha256_digest).is_ok())
             },
             other => panic!("unsupported signature algorithm {:?}", other),
         }
@@ -170,11 +214,15 @@ pub enum Error {
     CreatingDerReader(der::Error),
     DecodingCertificate(der::Error),
     DsaSignature(dsa::signature::Error),
-    Asn1Parsing(simple_asn1::ASN1DecodeErr),
-    UnexpectedDsaSignatureStructure(Vec<ASN1Block>),
+    UnexpectedDsaSignatureStructure(der::Error),
     MissingDsaParameters,
     MalformedDsaParameters,
     MalformedDsaKey,
+    MissingEcdsaParameters,
+    EcdsaCurveNotNamed,
+    UnsupportedCurve(der::oid::ObjectIdentifier),
+    MalformedEcdsaKey,
+    MalformedEcdsaSignature,
 }
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -199,16 +247,24 @@ impl fmt::Display for Error {
                 => write!(f, "error decoding certificate: {}", e),
             Self::DsaSignature(e)
                 => write!(f, "error with DSA signature: {}", e),
-            Self::Asn1Parsing(e)
-                => write!(f, "error parsing ASN.1 structure: {}", e),
-            Self::UnexpectedDsaSignatureStructure(_)
-                => write!(f, "unexpected DSA signature structure"),
+            Self::UnexpectedDsaSignatureStructure(e)
+                => write!(f, "unexpected DSA signature structure: {}", e),
             Self::MissingDsaParameters
                 => write!(f, "certificate is missing DSA parameters"),
             Self::MalformedDsaParameters
                 => write!(f, "certificate contains malformed DSA parameters"),
             Self::MalformedDsaKey
                 => write!(f, "certificate contains malformed DSA key"),
+            Self::MissingEcdsaParameters
+                => write!(f, "DSA parameters are missing"),
+            Self::EcdsaCurveNotNamed
+                => write!(f, "ECDSA curve is not a named curve"),
+            Self::UnsupportedCurve(oid)
+                => write!(f, "ECDSA curve {} is currently not supported", oid),
+            Self::MalformedEcdsaKey
+                => write!(f, "certificate contains malformed ECDSA key"),
+            Self::MalformedEcdsaSignature
+                => write!(f, "ECDSA signature is malformed"),
         }
     }
 }
@@ -225,11 +281,15 @@ impl std::error::Error for Error {
             Self::CreatingDerReader(e) => Some(e),
             Self::DecodingCertificate(e) => Some(e),
             Self::DsaSignature(_) => None,
-            Self::Asn1Parsing(e) => Some(e),
-            Self::UnexpectedDsaSignatureStructure(_) => None,
+            Self::UnexpectedDsaSignatureStructure(e) => Some(e),
             Self::MissingDsaParameters => None,
             Self::MalformedDsaParameters => None,
             Self::MalformedDsaKey => None,
+            Self::MissingEcdsaParameters => None,
+            Self::EcdsaCurveNotNamed => None,
+            Self::UnsupportedCurve(_) => None,
+            Self::MalformedEcdsaKey => None,
+            Self::MalformedEcdsaSignature => None,
         }
     }
 }
@@ -241,9 +301,6 @@ impl From<base64::DecodeError> for Error {
 }
 impl From<dsa::signature::Error> for Error {
     fn from(value: dsa::signature::Error) -> Self { Self::DsaSignature(value) }
-}
-impl From<simple_asn1::ASN1DecodeErr> for Error {
-    fn from(value: simple_asn1::ASN1DecodeErr) -> Self { Self::Asn1Parsing(value) }
 }
 
 #[derive(Clone, Debug, Default, Hash, Eq, Ord, PartialEq, PartialOrd)]
